@@ -3,7 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
-<title>청각 정보 공유 시스템 — LIVE v1.5 (실기기)</title>
+<title>청각 정보 공유 시스템 — LIVE v1.5.2 (실기기)</title>
+<!--
+  ═══ v1.5.2 (2026.09.01) 휴지 상태(확대·축소 문법) 구현 — 문헌 대조 갭 B1 해소 ═══
+  · 대화 모드 문법 반영: "메시지가 오면 커지고, 확인하면 작아진다. 확대 상태 = 미확인 할 일"
+  · 휴지 상태(waiting·making·moving 등)는 우측 하단에 작은 카드로 물러남 — 중심 시야 비움
+      (단안 우측 디스플레이 · 농인 주변시야 강점 존중 — 원칙 5·8, Calm Tech·Glanceable AR)
+  · 이벤트 도착(주문·변경·잡담 도착·요청·모드 제안) 시에만 중앙 확대 + 등장 애니메이션
+  · 반응(확인·답장) 후 완료 표시 1.3초 → 자동으로 우측 미니 카드로 축소 복귀
+  · 미니 카드 자체가 초점 버튼(핀치=완료 보고/도착/재고 보고) — 접근 0동작 유지
+-->
+<!--
+  ═══ v1.5.1 (2026.08.19) 실기기 핫픽스 ═══
+  · 더블 핀치 판정 간격 430 → 900ms — 밴드 제스처 인식 지연으로 두 Enter 간격이 길게 도착하는 문제 대응
+  · 첫 핀치 시 "한 번 더!" 푸터 피드백 · 진단 화면에 핀치 간격(ms) 실측 표시
+  · 변경 카드 답장 3택화: 가능(ack) / 불가—재고 없음(nak, EX1-b 역전달) / 보류(chgHold, 완료 보고 전 재표시)
+    — 확정 결정 "답장 후보 3(긍정·부정·유보)"을 변경형 틀에 적용. 전송은 여전히 더블 핀치만 통과(의도적 동작 유지)
+-->
 <!--
   3역할 실전 프로토타입: BAR · POS · CS
   ═══ v1.5 (2026.07.24): 실기기(Meta Ray-Ban Display) 규격 반영 ═══
@@ -59,6 +75,19 @@
   .chip.rush{border-color:var(--warn-deep);color:var(--warn)}
 
   .mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.4%}
+  /* ── v1.5.2 휴지 상태: 우측 하단 미니 카드 (중심 시야 비움) ── */
+  .mid.restmode{justify-content:flex-end;align-items:flex-end;gap:0;padding-bottom:2%}
+  .rbtn{background:transparent;border:1px solid transparent;border-radius:12px;text-align:right;
+    padding:2.5% 3.5%;cursor:pointer;font-family:var(--sans);max-width:62%}
+  .rbtn.focus{border-color:var(--ok-deep);background:rgba(110,231,168,.05);outline:none}
+  .restcard{text-align:right;opacity:.85}
+  .restcard .r1{font-size:clamp(14px,3.6vmin,22px);color:var(--sub);font-weight:600}
+  .restcard .r2{font-size:clamp(11px,2.5vmin,15px);color:var(--faint);margin-top:1%}
+  .restcard .r3{font-size:clamp(10px,2.2vmin,13px);color:var(--faint);margin-top:2.5%}
+  .restcard .rw{color:var(--warn)}
+  /* 이벤트 도착: 우측 미니 → 중앙 확대 애니메이션 */
+  .mid.growin{animation:hudgrow .18s ease-out}
+  @keyframes hudgrow{from{transform:scale(.55) translate(24%,18%);opacity:.4}to{transform:scale(1) translate(0,0);opacity:1}}
   .t1{font-size:clamp(20px,5.4vmin,32px);font-weight:600;line-height:1.28}
   .t2{font-size:clamp(13px,3.2vmin,19px);color:var(--sub)}
   .t3{font-size:clamp(11px,2.4vmin,14px);color:var(--faint)}
@@ -133,7 +162,7 @@
 
 <!-- 시작: 역할 선택 -->
 <div class="stage" id="startView">
-  <div class="top"><span>청각 정보 공유 시스템 v1.5</span><span class="chip" id="startConn">연결 중…</span></div>
+  <div class="top"><span>청각 정보 공유 시스템 v1.5.2</span><span class="chip" id="startConn">연결 중…</span></div>
   <div class="mid">
     <p class="t1">역할을 선택하세요</p>
     <p class="t3" id="roomLine"></p>
@@ -260,7 +289,7 @@ const HUB={
   /* ⑤ 라우팅: 내용이 수신자를 함의 — 역할 주소. 발신자는 수신자를 고르지 않는다. */
   ROUTE:{ order:'bar', change:'bar', chat:'bar',
           pc1:'cs', pc2:'cs', pc3:'cs', cp1:'pos',
-          seen:'pos', accept:'pos', ack:'pos', done:'pos', reply:'pos', deferNote:'pos',
+          seen:'pos', accept:'pos', ack:'pos', nak:'pos', chgHold:'pos', done:'pos', reply:'pos', deferNote:'pos',
           csSeen:'pos', csAccept:'pos', csDecline:'pos', csHold:'pos', csDone:'pos',
           cpReceipt:'cs', modeProposal:'all', modeSet:'all', danger:'all' },
   route(t){ return this.ROUTE[t]||'all'; },
@@ -351,11 +380,27 @@ function setFocusables(l){focusables=l;fIdx=0;paint();}
 function paint(){focusables.forEach((b,i)=>b.classList.toggle('focus',i===fIdx));}
 function moveFocus(d){if(!focusables.length)return;fIdx=(fIdx+d+focusables.length)%focusables.length;paint();}
 function activate(){if(focusables[fIdx])focusables[fIdx].click();}
-const DOUBLE_MS=430;let lastAct=0,actTimer=null,dblHandler=null;
+const DOUBLE_MS=900; // v1.5.1: 430→900ms — 밴드 제스처 인식 지연 대응 (진단 화면에서 실측 후 조정)
+let lastAct=0,actTimer=null,dblHandler=null;
+let lastPinchTime=0,lastPinchGap=0; // v1.5.1: 핀치 간격 실측 (진단 표시용)
+function flashFootOnce(){ // v1.5.1: 첫 핀치 피드백 — "한 번 더!"
+  const foot=document.getElementById(myRole==='cs'?'cFoot':'bFoot');
+  if(!foot)return;
+  const prev=foot.innerHTML;
+  foot.innerHTML='<span class="g">✓ 핀치 1회 — 한 번 더! (0.9초 안)</span>';
+  setTimeout(()=>{if(dblHandler&&foot.innerHTML.indexOf('한 번 더')>=0)foot.innerHTML=prev;},DOUBLE_MS+200);
+}
 function pinch(){
   const now=Date.now();
+  if(lastPinchTime)lastPinchGap=now-lastPinchTime;
+  lastPinchTime=now;
   if(now-lastAct<DOUBLE_MS){clearTimeout(actTimer);actTimer=null;lastAct=0;if(dblHandler)dblHandler();else activate();}
-  else{lastAct=now;actTimer=setTimeout(()=>{lastAct=0;activate();},dblHandler?DOUBLE_MS:0);}
+  else{
+    lastAct=now;
+    if(dblHandler)flashFootOnce();
+    // dblHandler가 있는 화면(변경 카드)에서는 싱글 핀치로 전송되지 않도록 activate 생략
+    actTimer=setTimeout(()=>{lastAct=0;if(!dblHandler)activate();},dblHandler?DOUBLE_MS:0);
+  }
 }
 
 /* ═══ Mock Device 모드 (데스크톱 전용) ═══ */
@@ -492,6 +537,7 @@ function runDiag(){
   dMid.innerHTML=
     '<p class="t2">① MQTT(wss) 통신: '+mqLine+'</p>'+
     '<p class="t2">② 마지막 입력: <span class="g" id="dKey">'+(lastKey?lastKey+' ('+lastKeyN+'회)':'아직 없음 — 스와이프해 보세요')+'</span></p>'+
+    '<p class="t2">②-1 핀치 간격: <span class="g">'+(lastPinchGap?lastPinchGap+'ms':'측정 전 — 핀치를 두 번 해보세요')+'</span> <span class="t3">(더블 판정 기준 '+DOUBLE_MS+'ms — 간격이 기준보다 크면 더블 인식 실패)</span></p>'+
     '<p class="t2">③ 진동 API: '+(navigator.vibrate?'지원':'미지원 → <span class="g">시각 펄스로 대체 중</span>')+'</p>'+
     '<p class="t2">④ 저장소(localStorage): '+(sOk?'작동 ✓ (역할·방 기억됨)':'<span class="tag-warn">차단됨</span>')+'</p>'+
     '<p class="t2">⑤ 화면: '+innerWidth+'×'+innerHeight+' <span class="t3">(기대값 600×600)</span></p>'+
@@ -505,13 +551,15 @@ function runDiag(){
 V.start.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{
   if(b.dataset.r==='diag')openDiag();else enterRole(b.dataset.r);
 });
-if(['bar','pos','cs'].includes(myRole))enterRole(myRole);
-else startFocus();
+/* v1.5.1: URL role 자동 진입은 스크립트 맨 끝(모든 선언 이후)으로 이동 — ?role=bar 진입 시 초기화 순서 오류 수정 */
+if(!['bar','pos','cs'].includes(myRole))startFocus();
 
 /* ═══ BAR (EX1 + 모드 제안 카드) ═══ */
 const bTopL=document.getElementById('bTopL'),bMid=document.getElementById('bMid'),
       bFoot=document.getElementById('bFoot'),bDefer=document.getElementById('bDefer');
-let bState='waiting',order=null,change=null,deferred=[];
+let bState='waiting',order=null,change=null,deferred=[],heldChange=false,appliedChange=null; // v1.5.1 heldChange · v1.5.2 appliedChange=반영된 변경 표시용
+const B_REST=['waiting','making'];           // v1.5.2: 휴지(미니) 상태 목록
+const B_GROW=['order','change','deferred','modeAsk','calmAsk']; // 확대 애니메이션 상태
 function barProposal(mode){ // 허브 ③ 하이브리드 전환: 제안은 카드로, 확정은 핀치로
   if(HUB.mode===mode)return;
   if(bState==='waiting')barRender('modeAsk');
@@ -520,8 +568,9 @@ function barRender(st){
   bState=st;dblHandler=null;V.bar.classList.remove('alert');
   let tl='',mid='',ft='';
   if(st==='waiting'){tl='대기 · '+modeLabel(HUB.mode);
-    mid=`<p class="t1">근무 준비 완료</p><p class="t3">POS에서 주문이 오면 표시됩니다</p>`;
-    ft='스와이프=이동 · 핀치=선택';}
+    /* v1.5.2 휴지 상태: 중심 시야 비움 — 우측 하단 미니 카드 */
+    mid=`<div class="restcard"><p class="r1">대기</p><p class="r2">${modeLabel(HUB.mode)}${deferred.length?' · <span class="rw">잡담 '+deferred.length+'건</span>':''}</p><p class="r3">메시지가 오면 커집니다</p></div>`;
+    ft='';}
   else if(st==='modeAsk'){tl='제안 · 허브';
     mid=`<p class="t1">러시 모드로 전환할까요?</p><p class="t3">주문 유입 감지 — 급한 것만 통과되고 잡담은 보류됩니다</p>
       <div class="btnrow"><button class="fbtn" id="bModeGo">전환</button><button class="fbtn" id="bModeNo">나중에</button></div>`;
@@ -535,22 +584,37 @@ function barRender(st){
       <div class="btnrow"><button class="fbtn" id="bAcc">제조 시작</button></div>`;
     ft='<span class="g">핀치 → 제조 시작</span>';}
   else if(st==='making'){tl='<span class="tag-ok">제조 중</span> · #'+order.id;
-    mid=`<p class="t1">${order.drink}</p><p class="t2">${order.opts}</p>
-      <div class="btnrow"><button class="fbtn" id="bDone">완료 보고</button></div>`;
-    ft='핀치 → 완료 보고';}
+    /* v1.5.2 휴지 상태: 제조 중에도 우측 미니 카드 — 카드 자체가 초점 버튼(핀치=완료 보고) */
+    mid=`<button class="fbtn rbtn" id="bDone"><span class="restcard">
+      <p class="r1">제조 중 · #${order.id}</p>
+      <p class="r2">${order.drink}${appliedChange?' · <span class="rw">'+appliedChange+'</span>':''}</p>
+      ${heldChange?'<p class="r3 rw">변경 1건 보류 중 — 완료 전 재표시</p>':''}
+      <p class="r3">핀치 = 완료 보고</p></span></button>`;
+    ft='';}
   else if(st==='change'){V.bar.classList.add('alert');
     tl='<span class="tag-warn">변경 · #'+order.id+'</span>';
-    mid=`<p class="strike">${change.from}</p><p class="diff">→ ${change.toV}</p><p class="t2">나머지 동일</p>`;
-    ft='<span class="g">더블 핀치 → 알겠음</span> (핀치 두 번)';
-    dblHandler=()=>{send({t:'ack',id:order.id});barRender('acked');};}
+    /* v1.5.1: 답장 후보 3 (긍정·부정·유보) — 스와이프로 선택, 더블 핀치로만 전송(의도적 동작 유지) */
+    mid=`<p class="strike">${change.from}</p><p class="diff">→ ${change.toV}</p><p class="t2">나머지 동일</p>
+      <div class="btnrow">
+        <button class="fbtn" id="bChgOk">가능 — 바꿀게</button>
+        <button class="fbtn" id="bChgNo">불가 — 재고 없음</button>
+        <button class="fbtn" id="bChgHold">보류 — 잠시 후</button>
+      </div>`;
+    ft='스와이프=선택 이동 · <span class="g">더블 핀치=전송</span> (핀치 두 번)';
+    dblHandler=()=>{const b=focusables[fIdx];if(b)b.click();};}
+  else if(st==='nakSent'){tl='<span class="tag-ok">전달됨</span>';
+    mid=`<p class="okline">✓ 불가 사유 전달 — 원래 사양대로 계속</p><p class="t1">${order.drink}</p><p class="t2">${order.opts}</p>`;
+    ft='잠시 후 작아집니다';change=null;
+    setTimeout(()=>{if(bState==='nakSent')barRender('making');},1300);}
   else if(st==='acked'){tl='<span class="tag-ok">변경 반영됨</span>';
+    /* v1.5.2: 반응 완료 표시 1.3초 → 자동 축소(making 미니 카드로 복귀) */
     mid=`<p class="okline">✓ 확인 전달됨</p><p class="t1">${order.drink}</p>
-      <p class="t2">${order.opts} · <span style="color:var(--warn)">${change.toV}</span></p>
-      <div class="btnrow"><button class="fbtn" id="bDone">완료 보고</button></div>`;
-    ft='핀치 → 완료 보고';}
+      <p class="t2">${order.opts} · <span style="color:var(--warn)">${change?change.toV:''}</span></p>`;
+    ft='잠시 후 작아집니다';
+    setTimeout(()=>{if(bState==='acked')barRender('making');},1300);}
   else if(st==='done'){tl='<span class="tag-ok">완료</span>';
     mid=`<p class="t1">#${order?order.id:''} 완료 보고됨</p><p class="t3">순환 구조가 닫혔습니다</p>`;
-    ft='다음 대기';order=null;change=null;
+    ft='다음 대기';order=null;change=null;appliedChange=null;heldChange=false;
     setTimeout(()=>{if(bState==='done'){
       if(HUB.mode==='rush'||deferred.length)barRender('calmAsk');
       else barRender('waiting');
@@ -566,9 +630,17 @@ function barRender(st){
   else if(st==='replied'){tl='대화 · 민지';
     mid=`<p class="okline">✓ 답장 전송됨</p>`;ft='다음 대기';
     setTimeout(()=>{if(bState==='replied')barRender(deferred.length?'deferred':'waiting');},2200);}
+  /* v1.5.2: 상태별 화면 크기 문법 — 휴지=우측 미니 / 이벤트 도착=중앙 확대(애니메이션) */
+  bMid.className='mid'+(B_REST.includes(st)?' restmode':(B_GROW.includes(st)?' growin':''));
   bTopL.innerHTML=tl;bMid.innerHTML=mid;bFoot.innerHTML=ft;
   const acc=document.getElementById('bAcc');if(acc)acc.onclick=()=>{send({t:'accept',id:order.id});barRender('making');};
-  const dn=document.getElementById('bDone');if(dn)dn.onclick=()=>{send({t:'done',id:order.id});barRender('done');};
+  const dn=document.getElementById('bDone');if(dn)dn.onclick=()=>{
+    if(heldChange){heldChange=false;barRender('change');return;} // 보류된 변경을 완료 보고 전에 재표시
+    send({t:'done',id:order.id});barRender('done');};
+  /* v1.5.1: 변경 카드 3택 핸들러 (더블 핀치 dblHandler가 포커스된 버튼을 click) */
+  const co=document.getElementById('bChgOk');if(co)co.onclick=()=>{appliedChange=change?change.toV:null;send({t:'ack',id:order.id});barRender('acked');};
+  const cno=document.getElementById('bChgNo');if(cno)cno.onclick=()=>{send({t:'nak',id:order.id,text:'재고 없음 — 변경 불가'});barRender('nakSent');};
+  const chd=document.getElementById('bChgHold');if(chd)chd.onclick=()=>{heldChange=true;send({t:'chgHold',id:order.id});barRender('making');};
   const r1=document.getElementById('bR1');if(r1)r1.onclick=()=>{send({t:'reply',text:'고마워'});barRender('replied');};
   const r2=document.getElementById('bR2');if(r2)r2.onclick=()=>{send({t:'reply',text:'너도 고생했어'});barRender('replied');};
   const mg=document.getElementById('bModeGo');if(mg)mg.onclick=()=>{setMode('rush',true);barRender(order?'order':'waiting');};
@@ -594,6 +666,8 @@ function barReceive(m){
 /* ═══ CS (EX2 + PC/CP) ═══ */
 const cTopL=document.getElementById('cTopL'),cMid=document.getElementById('cMid'),cFoot=document.getElementById('cFoot');
 let cState='waiting',req=null;
+const C_REST=['waiting','moving','cpSent'];  // v1.5.2: CS 휴지(미니) 상태
+const C_GROW=['request'];                    // 확대 애니메이션 상태
 const PC_CANDS={ // 어휘 세트의 답장 후보 3 (긍정·부정·유보)
   pc1:['지금 갈게요','지금 못 가요','5분 뒤에'],
   pc2:['바로 처리할게요','못 가요, 대신 부탁','확인했어요'],
@@ -603,9 +677,11 @@ function csRender(st){
   cState=st;dblHandler=null;V.cs.classList.remove('alert');
   let tl='',mid='',ft='';
   if(st==='waiting'){tl='순회 중 · '+modeLabel(HUB.mode);
-    mid=`<p class="t1">플로어 체크 중</p><p class="t3">요청이 오면 위치와 함께 표시됩니다</p>
-      <div class="btnrow"><button class="fbtn" id="cCP1">CP-1 · 우유 2팩 남음 보고</button></div>`;
-    ft='<span class="g">핀치 → POS에 보고</span> · rush 중엔 허브가 보류 후 여유 때 전달';}
+    /* v1.5.2 휴지 상태: 우측 미니 카드 — 카드가 초점 버튼(핀치=CP-1 보고) */
+    mid=`<button class="fbtn rbtn" id="cCP1"><span class="restcard">
+      <p class="r1">순회 중</p><p class="r2">${modeLabel(HUB.mode)}</p>
+      <p class="r3">핀치 = CP-1 재고 보고 · 요청 오면 커집니다</p></span></button>`;
+    ft='';}
   else if(st==='request'){
     if(req.urgent)V.cs.classList.add('alert');
     tl=(req.urgent?'<span class="tag-warn">안전 · ':'요청 · ')+req.code.toUpperCase()+(req.urgent?'</span>':'')+' · 민지(POS)';
@@ -613,19 +689,23 @@ function csRender(st){
       <div class="btnrow">${PC_CANDS[req.code].map((c,i)=>`<button class="fbtn" data-i="${i}">${c}</button>`).join('')}</div>`;
     ft='스와이프=후보 이동 · <span class="g">핀치=답장</span>';}
   else if(st==='moving'){tl='<span class="tag-ok">이동 중</span> · '+req.code.toUpperCase();
-    mid=`<p class="t1">${req.text}</p><p class="loc">→ ${req.loc}</p>
-      <div class="btnrow"><button class="fbtn" id="cArr">도착 — 처리 완료</button></div>`;
-    ft='<span class="g">처리 후 핀치 → 완료 보고</span>';}
+    /* v1.5.2 휴지 상태: 이동 중 우측 미니 카드 (위치만 은은히) — 핀치=완료 */
+    mid=`<button class="fbtn rbtn" id="cArr"><span class="restcard">
+      <p class="r1">→ ${req.loc}</p><p class="r2">${req.text}</p>
+      <p class="r3">도착·처리 후 핀치 = 완료 보고</p></span></button>`;
+    ft='';}
   else if(st==='reqDone'){tl='<span class="tag-ok">완료</span>';
     mid=`<p class="okline">✓ ${req.text} — 완료 보고됨</p><p class="t3">순회로 복귀</p>`;
     ft='';req=null;
     setTimeout(()=>{if(cState==='reqDone')csRender('waiting');},2000);}
   else if(st==='cpSent'){tl='보고 전송됨';
-    mid=`<p class="okline">✓ 우유 2팩 남음 — POS에 전달${HUB.mode==='rush'?' (러시 — 허브가 보류, 여유 때 도착)':''}</p><p class="t3">확인이 오면 표시됩니다</p>`;
+    mid=`<div class="restcard"><p class="r1">✓ 보고 전송</p><p class="r2">우유 2팩 남음${HUB.mode==='rush'?' · <span class="rw">러시 — 보류 중</span>':''}</p><p class="r3">확인이 오면 커집니다</p></div>`;
     ft='';}
   else if(st==='cpConfirmed'){tl='보고 확인됨';
     mid=`<p class="okline">✓ 민지가 확인 — "발주할게"</p>`;ft='';
     setTimeout(()=>{if(cState==='cpConfirmed')csRender('waiting');},2200);}
+  /* v1.5.2: 상태별 화면 크기 문법 (CS) */
+  cMid.className='mid'+(C_REST.includes(st)?' restmode':(C_GROW.includes(st)?' growin':''));
   cTopL.innerHTML=tl;cMid.innerHTML=mid;cFoot.innerHTML=ft;
   const cp1=document.getElementById('cCP1');
   if(cp1)cp1.onclick=()=>{send({t:'cp1',text:'우유 2팩 남음 — 보충 필요'});csRender('cpSent');};
@@ -657,14 +737,19 @@ function csReceive(m){
 const pStatus=document.getElementById('pStatus'),pLog=document.getElementById('pLog'),pInbox=document.getElementById('pInbox');
 const btn={order:document.getElementById('pOrder'),change:document.getElementById('pChange'),chat:document.getElementById('pChat'),
   pc1:document.getElementById('pPC1'),pc2:document.getElementById('pPC2'),pc3:document.getElementById('pPC3')};
-let stg={order:-1,change:-1},csStg={}; // csStg[code] = 0전송 1도착 2수락/불가 3완료
+let stg={order:-1,change:-1},csStg={},changeDeclined=false; // csStg[code] = 0전송 1도착 2수락/불가 3완료
 function plog(m,c){const li=document.createElement('li');li.textContent=m;if(c)li.className=c;pLog.prepend(li);}
 function pRender(){
   let h='';
   if(stg.order>=0){const L=['전송','도착','수락·제조','완료 ✓'];
     h+=`<p style="font-size:13px;font-weight:600">BAR · 주문 #127</p><div class="stgrow">${L.map((l,i)=>`<span class="stg ${i<stg.order?'ok':(i===stg.order?(i===3?'ok':'on'):'')}">${l}</span>`).join('')}</div>`;}
-  if(stg.change>=0){const L=['전송','도착·안 봄','확인 ✓'];
-    h+=`<p style="font-size:13px;font-weight:600;margin-top:10px">BAR · 변경 우유→오트</p><div class="stgrow">${L.map((l,i)=>`<span class="stg ${i<stg.change?'ok':(i===stg.change?(i===2?'ok':'on'):'')}">${l}</span>`).join('')}</div>`;}
+  if(stg.change>=0){const L=changeDeclined?['전송','도착','불가 ✗']:['전송','도착·안 봄','확인 ✓'];
+    h+=`<p style="font-size:13px;font-weight:600;margin-top:10px">BAR · 변경 우유→오트</p><div class="stgrow">${L.map((l,i)=>{
+      let cls='';
+      if(changeDeclined&&i===2)cls=i<=stg.change?'no':'';
+      else cls=i<stg.change?'ok':(i===stg.change?(i===2?'ok':'on'):'');
+      return `<span class="stg ${cls}">${l}</span>`;}).join('')}</div>`;
+    if(changeDeclined)h+=`<p style="font-size:12px;color:#8a3030;margin-top:4px">불가 사유: 재고 없음 — 손님 안내 필요 (EX1-b 역전달)</p>`;}
   for(const code of Object.keys(csStg)){
     const v=csStg[code];
     const L=v.declined?['전송','도착','불가 ✗']:['전송','도착','수락·이동 중','완료 ✓'];
@@ -716,7 +801,9 @@ function posReceive(m){
   if(m.t==='seen'&&m.what==='order'){stg.order=Math.max(stg.order,1);pRender();plog('BAR: 주문 도착');}
   else if(m.t==='accept'){stg.order=2;pRender();plog('BAR 수락 — 제조 시작','ok');}
   else if(m.t==='seen'&&m.what==='change'){stg.change=Math.max(stg.change,1);pRender();plog('BAR: 변경 도착 — 아직 안 봄','warn');}
-  else if(m.t==='ack'){stg.change=2;pRender();plog('BAR 확인 (더블 핀치)','ok');}
+  else if(m.t==='ack'){stg.change=2;changeDeclined=false;pRender();plog('BAR 확인: 가능 — 바꿀게 (더블 핀치)','ok');}
+  else if(m.t==='nak'){stg.change=2;changeDeclined=true;pRender();btn.change.disabled=true;plog('BAR 불가: "'+(m.text||'변경 불가')+'" — 손님 안내 필요','warn');}
+  else if(m.t==='chgHold'){plog('BAR 보류: 잠시 후 확인 — 완료 보고 전 재표시 예정','warn');}
   else if(m.t==='done'){stg.order=3;pRender();btn.order.disabled=false;btn.change.disabled=true;plog('BAR 완료 — 순환 닫힘','ok');}
   else if(m.t==='deferNote'){plog('잡담이 허브 게이트에서 보류됨 (러시/과업 중)','warn');}
   else if(m.t==='reply'){plog('BAR 답장: "'+m.text+'"','ok');}
@@ -734,6 +821,7 @@ function posReceive(m){
   else if(m.t==='hello'){plog(m.role.toUpperCase()+' 접속됨','ok');}
 }
 updateModeChips();
+if(['bar','pos','cs'].includes(myRole))enterRole(myRole); // v1.5.1: 모든 선언 이후에 자동 진입
 </script>
 </body>
 </html>
