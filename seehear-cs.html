@@ -92,6 +92,12 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 /* 실제 폰에서 '휴대폰' 모드: 폰 틀 없이 화면을 꽉 채움 (가짜 상태바·아일랜드 숨김, 실제 iOS 상태바를 씀) */
 .phone.native{border-radius:0;box-shadow:none}
 .phone.native .sb{visibility:hidden}
+.phone.native{--safeB:22px}                       /* 홈 인디케이터 자리 */
+.phone.native .tabs{height:calc(78px + var(--safeB));padding-bottom:calc(8px + var(--safeB))}
+.phone.native .pan{bottom:calc(78px + var(--safeB))}
+.phone.native .sheet{padding-bottom:calc(26px + var(--safeB))}
+.phone.native .people{bottom:calc(78px + var(--safeB) + 14px)}
+html.nativehtml{background:#2f5d50}
 body.nativebody{background:#a9c4a6;margin:0;overflow:hidden}
 body.nativebody .wrap{padding:0;gap:0}
 body.nativebody .mbtog{top:max(4px,env(safe-area-inset-top,0px));right:6px;width:26px;height:26px;opacity:.55}
@@ -1990,7 +1996,7 @@ function fit(){
   const w = land?956:440, h = land?440:956;
   const mode=document.body.dataset.mode; const narrow = mode==='phone' || innerWidth < 760;
   const small = innerWidth <= 600;
-  const vh = (window.visualViewport && window.visualViewport.height) || innerHeight;   // 브라우저 주소창을 뺀 실제 보이는 높이
+  const vh = Math.max((window.visualViewport && window.visualViewport.height) || 0, innerHeight, document.documentElement.clientHeight||0);   // 실제 보이는 높이 (Bluefy 전체화면 포함)
   const mbH = small ? (document.body.classList.contains('mbhide') ? 8 : 64) : (mode==='phone'?70:40);
   const wrapEl=document.querySelector('.wrap'); const vw = (wrapEl&&wrapEl.clientWidth) || document.documentElement.clientWidth || innerWidth;   // 실제 배치 영역 너비
   const sideW = vw<=900 ? 340 : 360;
@@ -1998,7 +2004,7 @@ function fit(){
   const availH = narrow ? vh - mbH - 24 : innerHeight - 40;
   // 실제 폰(좁은 화면)에서 휴대폰 모드이고 모드바가 접혀 있으면: 틀 없이 꽉 채우기
   const native = small && mode==='phone' && document.body.classList.contains('mbhide') && !land;
-  document.body.classList.toggle('nativebody', native); P.classList.toggle('native', native);
+  document.body.classList.toggle('nativebody', native); P.classList.toggle('native', native); document.documentElement.classList.toggle('nativehtml', native);
   if(native){
     const HIDE = 44;                       // 가짜 상태바 윗부분을 화면 위로 밀어 숨김 (실제 상태바가 그 자리)
     const k = vw / w;
