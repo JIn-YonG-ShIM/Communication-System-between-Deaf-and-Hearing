@@ -42,7 +42,8 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 /* 작은 화면: 모드바를 접어 두고 ⋯ 로 열기 */
 .mbtog{display:none}
 @media (max-width:600px){
-  .mbtog{display:grid;place-items:center;position:fixed;top:max(6px,env(safe-area-inset-top,0px));right:8px;z-index:50;width:30px;height:30px;border-radius:15px;background:rgba(255,255,255,.85);color:var(--page-sub);font-size:16px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .mbtog{display:block;position:fixed;top:0;right:0;z-index:50;width:56px;height:56px;background:transparent;color:transparent;font-size:0;border:0}   /* 보이지 않는 모서리 터치 영역 */
+  body:not(.mbhide) .mbtog{background:rgba(0,0,0,.08);border-radius:0 0 0 16px;color:var(--page-sub);font-size:16px;display:grid;place-items:center}   /* 설정 줄이 열려 있을 땐 닫기 표시 */
   body.mbhide .modebar{display:none}
   .modebar{padding:6px 10px 0;gap:6px;font-size:11px}
   .modebar .seg button{padding:4px 8px}
@@ -104,7 +105,7 @@ html.nativehtml{background:#a9c4a6;height:100%}
 body.nativebody{background:transparent!important}
 body.nativebody{background:#a9c4a6;margin:0;overflow:hidden}
 body.nativebody .wrap{padding:0;gap:0}
-body.nativebody .mbtog{top:max(4px,env(safe-area-inset-top,0px));right:6px;width:26px;height:26px;opacity:.55}
+body.nativebody .mbtog{top:0;right:0;width:56px;height:56px;opacity:1}
 .chips{position:absolute;left:0;right:0;top:72px;height:58px;display:flex;gap:10px;padding:6px 22px;overflow-x:auto;scrollbar-width:none;z-index:6}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:44px;border-radius:22px;background:var(--card);padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:500;font-size:calc(15px * var(--fsz,1));box-shadow:0 2px 4px rgba(0,0,0,.14);white-space:nowrap}
@@ -457,7 +458,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 
 /* 시작 화면 */
 .full{position:absolute;inset:0;padding:78px 22px 26px;display:flex;flex-direction:column;gap:12px}
-.login{background:linear-gradient(180deg,#f7f9f6 0%,var(--bg) 42%,var(--pri) 100%);justify-content:center;align-items:center}
+.login{background:linear-gradient(180deg,#eef0ee 0%,var(--bg) 42%,var(--pri) 100%);justify-content:center;align-items:center}
 .logo{display:flex;align-items:center;gap:4px;margin-bottom:26px}
 .logo b{font-size:calc(30px * var(--fsz,1));font-weight:900;letter-spacing:-.02em;color:var(--ink);margin-left:8px}
 .lbox{width:250px;background:rgba(120,150,125,.25);border-radius:18px;padding:2px 14px}
@@ -1039,7 +1040,7 @@ function render(){
   P.dataset.th = S.theme; P.style.setProperty('--fsz', S.fsz);
   // 상태바 뒤 색(iOS·Bluefy): 지금 화면 맨 위 색과 같게
   { const th=P.dataset.th||'sage'; const BG={sage:'#a9c4a6',mist:'#d5dee3',oat:'#e6dfd1'}[th]||'#a9c4a6';
-    const top = S.screen==='login' ? '#f7f9f6' : S.screen==='rolepick' ? '#ffffff' : (S.screen==='main'&&S.tab==='card') ? ({white:'#fff',cream:'#fff3b0',sky:'#dcebfa',green:'#2f5d50',navy:'#1f2a44',black:'#141414'}[S.card.color]||BG) : BG;
+    const top = S.screen==='login' ? '#eef0ee' : S.screen==='rolepick' ? '#ffffff' : (S.screen==='main'&&S.tab==='card') ? ({white:'#fff',cream:'#fff3b0',sky:'#dcebfa',green:'#2f5d50',navy:'#1f2a44',black:'#141414'}[S.card.color]||BG) : BG;
     const m=document.getElementById('themeColor'); if(m && m.content!==top) m.content=top;
     if(document.documentElement.classList.contains('nativehtml')) document.documentElement.style.background=top; }
   P.classList.toggle('darkcard', S.screen==='main' && S.tab==='card' && ['green','navy','black'].includes(S.card.color));
