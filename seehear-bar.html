@@ -97,7 +97,7 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .phone.native .pan{bottom:calc(78px + var(--safeB))}
 .phone.native .sheet{padding-bottom:calc(26px + var(--safeB))}
 .phone.native .people{bottom:calc(78px + var(--safeB) + 14px)}
-html.nativehtml{background:#2f5d50}
+html.nativehtml{background:#a9c4a6;height:100%}
 body.nativebody{background:#a9c4a6;margin:0;overflow:hidden}
 body.nativebody .wrap{padding:0;gap:0}
 body.nativebody .mbtog{top:max(4px,env(safe-area-inset-top,0px));right:6px;width:26px;height:26px;opacity:.55}
@@ -2021,6 +2021,8 @@ function fit(){
 }
 addEventListener('resize', fit);
 if(window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+addEventListener('orientationchange', ()=>setTimeout(fit,300));
+setInterval(()=>{ if(document.body.classList.contains('nativebody')){ const vh=Math.max((visualViewport&&visualViewport.height)||0, innerHeight); if(Math.abs(vh-(+document.body.dataset.vh||0))>2){ document.body.dataset.vh=vh; fit(); } } }, 700);   // Bluefy 툴바가 숨겨져 화면이 커져도 따라감
 $('#mbtog').addEventListener('click',()=>{ document.body.classList.toggle('mbhide'); try{ localStorage.setItem('seehear-mbhide', document.body.classList.contains('mbhide')?'1':''); }catch(e){} fit(); });
 (()=>{ if(innerWidth<=600){ let h='1'; try{ h=localStorage.getItem('seehear-mbhide'); if(h===null) h='1'; }catch(e){} if(h==='1') document.body.classList.add('mbhide'); } })();
 function reset(){ clearTimers(); if(S) S.signals.forEach(x=>x.timer&&clearTimeout(x.timer)); clearInterval(S&&S.testIv); S=fresh(); $('#log').innerHTML=''; paintClip(); render(); }
