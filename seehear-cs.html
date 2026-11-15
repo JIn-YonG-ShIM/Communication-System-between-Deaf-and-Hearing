@@ -30,6 +30,7 @@ button:disabled{cursor:default}
 .modebar .st.on::before{background:#1f9a68}
 body[data-mode="phone"] .side,body[data-mode="remote"] .stage{display:none}
 body[data-mode="remote"] .side{width:min(520px,100%)}
+@media (min-width:760px) and (max-width:900px){ body[data-mode="both"] .side{width:340px} }
 .mirror{display:flex;justify-content:space-between;gap:8px;font-size:calc(12.5px * var(--fsz,1));color:var(--page-sub)}
 .mirror b{color:var(--page-ink);font-weight:500}
 .wrap{display:flex;gap:28px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -1981,11 +1982,13 @@ $('#roomIn').addEventListener('keydown',e=>{ if(e.key==='Enter') Remote.startRem
 function fit(){
   const land = P.classList.contains('land');
   const w = land?956:440, h = land?440:956;
-  const mode=document.body.dataset.mode; const narrow = mode==='phone' || innerWidth < 820;
+  const mode=document.body.dataset.mode; const narrow = mode==='phone' || innerWidth < 760;
   const small = innerWidth <= 600;
   const vh = (window.visualViewport && window.visualViewport.height) || innerHeight;   // 브라우저 주소창을 뺀 실제 보이는 높이
   const mbH = small ? (document.body.classList.contains('mbhide') ? 8 : 64) : (mode==='phone'?70:40);
-  const availW = narrow ? Math.min(innerWidth - (small?0:32), 480) : Math.max(300, innerWidth - 32 - 360 - 28);
+  const wrapEl=document.querySelector('.wrap'); const vw = (wrapEl&&wrapEl.clientWidth) || document.documentElement.clientWidth || innerWidth;   // 실제 배치 영역 너비
+  const sideW = vw<=900 ? 340 : 360;
+  const availW = narrow ? Math.min(vw - (small?0:32), 480) : Math.max(300, vw - 32 - sideW - 28 - 4);
   const availH = narrow ? vh - mbH - 24 : innerHeight - 40;
   const k = Math.min(availW / w, availH / h, 1);
   P.style.transform = `scale(${k})`;
@@ -1997,5 +2000,5 @@ $('#mbtog').addEventListener('click',()=>{ document.body.classList.toggle('mbhid
 (()=>{ if(innerWidth<=600){ let h='1'; try{ h=localStorage.getItem('seehear-mbhide'); if(h===null) h='1'; }catch(e){} if(h==='1') document.body.classList.add('mbhide'); } })();
 function reset(){ clearTimers(); if(S) S.signals.forEach(x=>x.timer&&clearTimeout(x.timer)); clearInterval(S&&S.testIv); S=fresh(); $('#log').innerHTML=''; paintClip(); render(); }
 reset();
-(function(){ const h=location.hash.replace('#',''); let m=['phone','remote','both'].includes(h)?h:null; if(!m){ try{ m=localStorage.getItem('seehear-mode'); }catch(e){} } if(!m) m = innerWidth<700 ? 'phone' : 'both'; setMode(m); })();
+(function(){ const h=location.hash.replace('#',''); let m=['phone','remote','both'].includes(h)?h:null; if(!m){ try{ m=localStorage.getItem('seehear-mode'); }catch(e){} } if(IS_CS && !['phone','remote','both'].includes(h)) m='both'; if(!m) m = innerWidth<700 ? 'phone' : 'both'; setMode(m); })();
 </script>
