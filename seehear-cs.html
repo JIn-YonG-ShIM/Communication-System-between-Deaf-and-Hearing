@@ -89,6 +89,12 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .sb,.sb *{--fsz:1}
 .demo,.demo *{--fsz:1}
 .phone.land .sb{display:none}
+/* 실제 폰에서 '휴대폰' 모드: 폰 틀 없이 화면을 꽉 채움 (가짜 상태바·아일랜드 숨김, 실제 iOS 상태바를 씀) */
+.phone.native{border-radius:0;box-shadow:none}
+.phone.native .sb{visibility:hidden}
+body.nativebody{background:#a9c4a6;margin:0;overflow:hidden}
+body.nativebody .wrap{padding:0;gap:0}
+body.nativebody .mbtog{top:max(4px,env(safe-area-inset-top,0px));right:6px;width:26px;height:26px;opacity:.55}
 .chips{position:absolute;left:0;right:0;top:72px;height:58px;display:flex;gap:10px;padding:6px 22px;overflow-x:auto;scrollbar-width:none;z-index:6}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:44px;border-radius:22px;background:var(--card);padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:500;font-size:calc(15px * var(--fsz,1));box-shadow:0 2px 4px rgba(0,0,0,.14);white-space:nowrap}
@@ -1990,6 +1996,19 @@ function fit(){
   const sideW = vw<=900 ? 340 : 360;
   const availW = narrow ? Math.min(vw - (small?0:32), 480) : Math.max(300, vw - 32 - sideW - 28 - 4);
   const availH = narrow ? vh - mbH - 24 : innerHeight - 40;
+  // 실제 폰(좁은 화면)에서 휴대폰 모드이고 모드바가 접혀 있으면: 틀 없이 꽉 채우기
+  const native = small && mode==='phone' && document.body.classList.contains('mbhide') && !land;
+  document.body.classList.toggle('nativebody', native); P.classList.toggle('native', native);
+  if(native){
+    const HIDE = 44;                       // 가짜 상태바 윗부분을 화면 위로 밀어 숨김 (실제 상태바가 그 자리)
+    const k = vw / w;
+    const hh = vh / k + HIDE;              // 폰 내부 높이를 화면에 맞게 늘림 (레이아웃은 위·아래 기준이라 자연히 따라옴)
+    P.style.height = hh+'px';
+    P.style.transform = `translateY(${-HIDE*k}px) scale(${k})`;
+    $('#stage').style.width = vw+'px'; $('#stage').style.height = vh+'px';
+    return;
+  }
+  P.style.height='';
   const k = Math.min(availW / w, availH / h, 1);
   P.style.transform = `scale(${k})`;
   $('#stage').style.width = w*k+'px'; $('#stage').style.height = h*k+'px';
