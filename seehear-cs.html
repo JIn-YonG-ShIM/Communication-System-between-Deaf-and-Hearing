@@ -1,5 +1,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" id="themeColor" content="#a9c4a6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SeeHear CS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,6 +101,7 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .phone.native .sheet{padding-bottom:calc(26px + var(--safeB))}
 .phone.native .people{bottom:calc(78px + var(--safeB) + 14px)}
 html.nativehtml{background:#a9c4a6;height:100%}
+body.nativebody{background:transparent!important}
 body.nativebody{background:#a9c4a6;margin:0;overflow:hidden}
 body.nativebody .wrap{padding:0;gap:0}
 body.nativebody .mbtog{top:max(4px,env(safe-area-inset-top,0px));right:6px;width:26px;height:26px;opacity:.55}
@@ -1033,6 +1037,11 @@ function msgOnly(){
 function render(){
   P.classList.toggle('land', S.land && S.screen==='main' && !S.tab);
   P.dataset.th = S.theme; P.style.setProperty('--fsz', S.fsz);
+  // 상태바 뒤 색(iOS·Bluefy): 지금 화면 맨 위 색과 같게
+  { const th=P.dataset.th||'sage'; const BG={sage:'#a9c4a6',mist:'#d5dee3',oat:'#e6dfd1'}[th]||'#a9c4a6';
+    const top = S.screen==='login' ? '#f7f9f6' : S.screen==='rolepick' ? '#ffffff' : (S.screen==='main'&&S.tab==='card') ? ({white:'#fff',cream:'#fff3b0',sky:'#dcebfa',green:'#2f5d50',navy:'#1f2a44',black:'#141414'}[S.card.color]||BG) : BG;
+    const m=document.getElementById('themeColor'); if(m && m.content!==top) m.content=top;
+    if(document.documentElement.classList.contains('nativehtml')) document.documentElement.style.background=top; }
   P.classList.toggle('darkcard', S.screen==='main' && S.tab==='card' && ['green','navy','black'].includes(S.card.color));
   if(S.screen==='main' && S.tab==='card') P.dataset.cc=S.card.color; else delete P.dataset.cc;
   const sc = S.screen;
