@@ -458,7 +458,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 
 /* 시작 화면 */
 .full{position:absolute;inset:0;padding:78px 22px 26px;display:flex;flex-direction:column;gap:12px}
-.login{background:linear-gradient(180deg,#eef0ee 0%,var(--bg) 42%,var(--pri) 100%);justify-content:center;align-items:center}
+.login{background:linear-gradient(180deg,#e6e6e6 0%,#e4e8e3 10%,var(--bg) 45%,var(--pri) 100%);justify-content:center;align-items:center}
 .logo{display:flex;align-items:center;gap:4px;margin-bottom:26px}
 .logo b{font-size:calc(30px * var(--fsz,1));font-weight:900;letter-spacing:-.02em;color:var(--ink);margin-left:8px}
 .lbox{width:250px;background:rgba(120,150,125,.25);border-radius:18px;padding:2px 14px}
@@ -1040,7 +1040,7 @@ function render(){
   P.dataset.th = S.theme; P.style.setProperty('--fsz', S.fsz);
   // 상태바 뒤 색(iOS·Bluefy): 지금 화면 맨 위 색과 같게
   { const th=P.dataset.th||'sage'; const BG={sage:'#a9c4a6',mist:'#d5dee3',oat:'#e6dfd1'}[th]||'#a9c4a6';
-    const top = S.screen==='login' ? '#eef0ee' : S.screen==='rolepick' ? '#ffffff' : (S.screen==='main'&&S.tab==='card') ? ({white:'#fff',cream:'#fff3b0',sky:'#dcebfa',green:'#2f5d50',navy:'#1f2a44',black:'#141414'}[S.card.color]||BG) : BG;
+    const top = S.screen==='login' ? '#e6e6e6' : S.screen==='rolepick' ? '#ffffff' : (S.screen==='main'&&S.tab==='card') ? ({white:'#fff',cream:'#fff3b0',sky:'#dcebfa',green:'#2f5d50',navy:'#1f2a44',black:'#141414'}[S.card.color]||BG) : BG;
     const m=document.getElementById('themeColor'); if(m && m.content!==top) m.content=top;
     if(document.documentElement.classList.contains('nativehtml')) document.documentElement.style.background=top; }
   P.classList.toggle('darkcard', S.screen==='main' && S.tab==='card' && ['green','navy','black'].includes(S.card.color));
