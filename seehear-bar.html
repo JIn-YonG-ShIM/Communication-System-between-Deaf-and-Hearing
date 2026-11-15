@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>SeeHear BAR</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,6 +34,14 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .mirror b{color:var(--page-ink);font-weight:500}
 .wrap{display:flex;gap:28px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .stage{position:relative;flex:none}
+/* 실제 폰·태블릿에서 열었을 때: 폰 틀이 화면을 채우고 모드바는 작게 */
+@media (max-width:600px){
+  .modebar{padding:6px 10px 0;gap:6px;font-size:11px}
+  .modebar .seg button{padding:4px 8px}
+  .modebar input{width:64px;padding:3px 4px}
+  .wrap{padding-block:8px;padding-left:0;padding-right:0;gap:12px}
+  body[data-mode="both"] .side{width:100%;max-width:440px}
+}
 .side{width:min(360px,100%);display:flex;flex-direction:column;gap:12px;min-width:0}
 
 /* ───── 시연 조작판 ───── */
@@ -1968,8 +1977,9 @@ function fit(){
   const land = P.classList.contains('land');
   const w = land?956:440, h = land?440:956;
   const mode=document.body.dataset.mode; const narrow = mode==='phone' || innerWidth < 820;
-  const availW = narrow ? Math.min(innerWidth - 32, 480) : Math.max(300, innerWidth - 32 - 360 - 28);
-  const availH = narrow ? innerHeight - (mode==='phone'?70:40) : innerHeight - 40;
+  const small = innerWidth <= 600;
+  const availW = narrow ? Math.min(innerWidth - (small?0:32), 480) : Math.max(300, innerWidth - 32 - 360 - 28);
+  const availH = narrow ? innerHeight - (small?44:(mode==='phone'?70:40)) : innerHeight - 40;
   const k = Math.min(availW / w, availH / h, 1);
   P.style.transform = `scale(${k})`;
   $('#stage').style.width = w*k+'px'; $('#stage').style.height = h*k+'px';
