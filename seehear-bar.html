@@ -2013,10 +2013,10 @@ function fit(){
   const availW = narrow ? Math.min(vw - (small?0:32), 480) : Math.max(300, vw - 32 - sideW - 28 - 4);
   const availH = narrow ? vh - mbH - 24 : innerHeight - 40;
   // 실제 폰(좁은 화면)에서 휴대폰 모드이고 모드바가 접혀 있으면: 틀 없이 꽉 채우기
-  const native = small && mode==='phone' && document.body.classList.contains('mbhide') && !land;
+  const native = (small || window.__nativeApp) && mode==='phone' && document.body.classList.contains('mbhide') && !land;
   document.body.classList.toggle('nativebody', native); P.classList.toggle('native', native); document.documentElement.classList.toggle('nativehtml', native);
   if(native){
-    const HIDE = 44;                       // 가짜 상태바 윗부분을 화면 위로 밀어 숨김 (실제 상태바가 그 자리)
+    const HIDE = window.__nativeApp ? 0 : 44;   // 브라우저: 가짜 상태바 윗부분을 화면 위로 밀어 숨김 / 전용 앱: 진짜 상태바가 그 위에 겹치므로 자리를 비워 둠
     const k = vw / w;
     const hh = vh / k + HIDE;              // 폰 내부 높이를 화면에 맞게 늘림 (레이아웃은 위·아래 기준이라 자연히 따라옴)
     P.style.height = hh+'px';

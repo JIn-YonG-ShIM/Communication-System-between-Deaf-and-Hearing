@@ -1,0 +1,14 @@
+Xcode 프로젝트의 Info 탭(또는 Info.plist)에 아래 4개를 추가하세요. (키 이름은 그대로, 값은 한국어 설명)
+
+Privacy - Bluetooth Always Usage Description      (NSBluetoothAlwaysUsageDescription)
+  → 모자 클립(LED)과 연결해 신호를 보내기 위해 블루투스를 사용합니다.
+
+Privacy - Microphone Usage Description            (NSMicrophoneUsageDescription)
+  → '말로 위험 알리기'를 위해 주변 말을 듣습니다.
+
+Privacy - Speech Recognition Usage Description    (NSSpeechRecognitionUsageDescription)
+  → 들린 말에서 위험 단어를 알아내기 위해 음성 인식을 사용합니다.
+
+App Transport Security Settings 는 필요 없음 (주소가 https 라서).
+
+선택: 상태바를 완전히 없애고 싶으면 SeeHearApp.swift 의 .statusBarHidden(false) 를 true 로.
