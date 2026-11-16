@@ -114,7 +114,7 @@ body.padapp .modebar .seg button{padding:7px 14px}
 body.padapp .modebar input{padding:7px 6px;width:92px}
 body.padapp .modebar .link{padding:7px 12px;background:var(--page-btn);border-radius:10px;text-decoration:none;color:var(--page-ink)}
 body.padapp .wrap{flex:1;min-height:0;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:20px;padding-top:6px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
-body.padapp .stage{align-self:center}
+body.padapp .stage{align-self:flex-start}
 body.padapp .side{flex:1;width:auto;min-width:0;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:18px}
 body.padapp .sidecols{display:block;column-width:300px;column-gap:12px}
 body.padapp .sidecols>.box{break-inside:avoid;margin:0 0 12px}
@@ -2059,6 +2059,9 @@ function fit(){
   $('#stage').style.width = w*k+'px'; $('#stage').style.height = h*k+'px';
 }
 addEventListener('resize', fit);
+// 아이패드 전용 앱: 상태바·홈 막대 자리(안전 영역)나 글꼴이 늦게 잡혀도 휴대폰 크기를 다시 맞춤
+if(window.ResizeObserver){ const ro=new ResizeObserver(()=>{ if(document.body.classList.contains('padapp')) fit(); }); ro.observe(document.querySelector('.wrap')); ro.observe(document.getElementById('modebar')); }
+[200,800,2000].forEach(t=>setTimeout(fit,t)); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit); addEventListener('pageshow', fit);
 if(window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 addEventListener('orientationchange', ()=>setTimeout(fit,300));
 setInterval(()=>{ if(document.body.classList.contains('nativebody')){ const vh=Math.max((visualViewport&&visualViewport.height)||0, innerHeight); if(Math.abs(vh-(+document.body.dataset.vh||0))>2){ document.body.dataset.vh=vh; fit(); } } }, 700);   // Bluefy 툴바가 숨겨져 화면이 커져도 따라감
