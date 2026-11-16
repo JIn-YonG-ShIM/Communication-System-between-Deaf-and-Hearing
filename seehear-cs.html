@@ -147,6 +147,10 @@ button.msg{font-family:inherit}
 .msg.pink{background:var(--pink);color:var(--ink)}
 .pan{position:absolute;left:22px;width:396px;top:206px;bottom:78px;background:var(--card);border-radius:28px 28px 0 0;padding:18px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none}
 .pan::-webkit-scrollbar{display:none}
+/* 휴대폰 화면 안의 스크롤 영역: 스크롤 막대 숨김 + 끝에서 고무줄처럼 튕기지 않게 (iOS 에서 막대가 카드 밖으로 삐져나오던 문제) */
+.phone *{scrollbar-width:none}
+.phone *::-webkit-scrollbar{display:none;width:0;height:0;background:transparent}
+.pan,.msgs,.sheet,.emogrid,.cmenu .list,.chips{overscroll-behavior:none}
 .sbar{position:absolute;right:27px;top:236px;bottom:86px;width:4px;z-index:6;pointer-events:none;opacity:0;transition:opacity .35s}
 .sbar.on{opacity:1}
 .sbar i{position:absolute;left:0;width:4px;border-radius:2px;background:var(--sub);opacity:.6;top:0;height:40px}
