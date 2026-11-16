@@ -1,0 +1,9 @@
+SeeHear iOS 앱 — 바로 열리는 Xcode 프로젝트
+
+1. 이 폴더(SeeHear-Xcode)를 홈 폴더(shim) 같은 곳에 둬요. (iCloud 바탕화면/문서 폴더는 피하기)
+2. SeeHear.xcodeproj 더블클릭
+3. 왼쪽 맨 위 파란 SeeHear 클릭 → TARGETS의 SeeHear → Signing & Capabilities → Team 에서 본인 (Personal Team) 선택
+4. 위쪽 실행 대상에서 아이폰 선택 → ▶
+
+이미 들어 있는 설정: iPhone/iPad 전용, iOS 16.0 이상, 블루투스·마이크·음성 인식 권한 문구, 앱 이름 SeeHear
+CS 기기(아이패드)용으로 바꾸려면: AppConfig.swift 의 주소 끝을 seehear-cs.html 로
