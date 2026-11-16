@@ -55,6 +55,7 @@ struct WebView: UIViewRepresentable {
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []
+        cfg.defaultWebpagePreferences.preferredContentMode = .mobile   // 아이패드에서도 '데스크톱 사이트'로 바뀌지 않게
         let ucc = WKUserContentController()
         if let p = Bundle.main.url(forResource: "webble", withExtension: "js"),
            let js = try? String(contentsOf: p) {
