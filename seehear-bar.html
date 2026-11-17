@@ -2082,7 +2082,7 @@ const Target = (()=>{
   const wide = () => document.body.classList.contains('padapp') || innerWidth >= 700;
   function paint(){
     const box=document.getElementById('tgt'); if(!box) return;
-    const meName = wide() ? `이 화면 (${APP_ROLE})` : `이 폰 (${APP_ROLE})`;
+    const meName = wide() ? `아이패드 (${APP_ROLE})` : `이 폰 (${APP_ROLE})`;
     box.querySelectorAll('button').forEach(b=>{ b.classList.toggle('on', b.dataset.t===cur); b.setAttribute('aria-pressed', b.dataset.t===cur);
       if(b.dataset.t==='self') b.textContent=meName; if(b.dataset.t==='peer') b.textContent=`휴대폰 (${OTHER_ROLE})`; });
     // 자리(BAR/CS)마다 다른 상황 묶음: 받는 기기의 것만 보이게. '둘 다'일 때는 둘 다 보이고 각자 주인에게 감
