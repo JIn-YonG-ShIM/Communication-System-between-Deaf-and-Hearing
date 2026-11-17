@@ -71,6 +71,13 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .demo .span2{grid-column:1/-1}
 .grp{font-size:calc(11px * var(--fsz,1));color:var(--page-sub);margin:10px 0 6px;font-weight:700;letter-spacing:.06em}
 .grp:first-child{margin-top:0}
+/* 상황을 보낼 곳: 이 기기 / 상대 휴대폰 / 둘 다 */
+.tgt{display:flex;background:var(--page-btn);border-radius:999px;padding:3px;margin:0 0 10px}
+.tgt button{flex:1;border-radius:999px;padding:8px 6px;min-height:38px;font-size:13px;font-weight:700;color:var(--page-sub);text-align:center}
+.tgt button.on{background:var(--page-ink);color:var(--page)}
+.tgtnote{font-size:12px;line-height:1.45;color:var(--page-sub);margin:-2px 2px 10px}
+.tgtnote.warn{color:#c0392b}
+[data-role].roff{display:none}
 .tog{display:flex;justify-content:space-between;align-items:center;font-size:calc(12.5px * var(--fsz,1));padding:6px 0;gap:8px}
 .tog code{font-family:ui-monospace,Menlo,monospace;font-size:calc(12px * var(--fsz,1));background:var(--page-btn);border-radius:6px;padding:2px 8px}
 .link{color:var(--page-sub);text-decoration:underline;font-size:calc(12px * var(--fsz,1))}
@@ -612,6 +619,8 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
     </section>
     <section class="box">
       <h2>상황 만들기</h2>
+      <div class="tgt" id="tgt" role="group" aria-label="상황을 보낼 곳"><button data-t="self" class="on"></button><button data-t="peer"></button><button data-t="both">둘 다</button></div>
+      <p class="tgtnote" id="tgtnote" hidden></p>
       <div class="grp" data-role="BAR">주문 · POS에서</div>
       <div class="demo" data-role="BAR">
         <button data-d="newOrder">새 주문 들어옴</button>
@@ -698,8 +707,7 @@ const SCHED = [{h:'06:00',r:'BAR'},{h:'07:00',r:'POS'},{h:'08:00',r:'BAR'},{h:'0
 const APP_ROLE = 'BAR';
 const IS_CS = APP_ROLE === 'CS';
 document.addEventListener('DOMContentLoaded', ()=>{
-  document.querySelectorAll('[data-role]').forEach(e=>{ if(e.dataset.role!==APP_ROLE) e.remove(); });
-  const g=document.getElementById('gSimon'); if(g) g.textContent = `동료 · Simon (${IS_CS?'BAR':'CS'} · 내 왼쪽)`;
+  Target.paint();
   if(IS_CS) document.title='SeeHear CS';
 });
 const RC = IS_CS
@@ -1012,6 +1020,13 @@ const Peer = (() => {
     const n=OTHER, roleOf=m.role;
     switch(m.t){
       case 'ping': return;
+      case 'demo': {   // 상대 기기의 조작판이 보낸 상황
+        const ok = m.k==='reset' || S.screen==='main';
+        log(`[조작판 · ${roleOf}] 상황 받음: ${m.label||m.k}${ok?'':' (아직 로그인 전이라 실행하지 못함)'}`);
+        send({t:'demoRes',k:m.k,label:m.label,ok});
+        if(ok) demo(m.k); else toast('조작판에서 상황을 보냈어요 · 먼저 로그인해 주세요');
+        return; }
+      case 'demoRes': { if(m.ok) log(`휴대폰(${roleOf})에서 실행됨: ${m.label||m.k}`); else { log(`휴대폰(${roleOf})이 아직 로그인 전이에요: ${m.label||m.k}`); alert2(`휴대폰이 아직 로그인 전이에요 · ${roleOf} 화면까지 들어가 주세요`); } return; }
       case 'req': {   // BAR 폰 → CS 폰: 재료·지원 요청
         const id=Date.now(); S.cs.reqs.push({id,from:n,what:m.what,st:'new',t:NOW()});
         S.chats[n].push({from:n,type:'text',v:`${m.what} 부탁해요`,t:NOW(),id});
@@ -2028,9 +2043,41 @@ P.addEventListener('pointerdown', e=>{
   render();
 }, true);
 document.querySelector('.side').addEventListener('click', e=>{
-  const b=e.target.closest('[data-d]'); if(b){ if(Remote.role==='remote'){ if(!Remote.send({t:'demo',k:b.dataset.d})) alert2('휴대폰과 아직 연결되지 않았어요'); } else demo(b.dataset.d); }
+  const b=e.target.closest('[data-d]'); if(b){ if(Remote.role==='remote'){ if(!Remote.send({t:'demo',k:b.dataset.d})) alert2('휴대폰과 아직 연결되지 않았어요'); } else Target.run(b); }
   const c=e.target.closest('[data-c]'); if(c){ if(Remote.role==='remote'){ if(['ble','usb'].includes(c.dataset.c)) alert2('클립 연결은 휴대폰에서 해 주세요'); else Remote.send({t:'clip',k:c.dataset.c}); } else Clip[c.dataset.c](); }
 });
+// ---------- 상황을 보낼 곳 (이 기기 / 상대 휴대폰 / 둘 다) ----------
+const Target = (()=>{
+  let cur='self';
+  const OTHER_ROLE = IS_CS ? 'BAR' : 'CS';
+  const wide = () => document.body.classList.contains('padapp') || innerWidth >= 700;
+  function paint(){
+    const box=document.getElementById('tgt'); if(!box) return;
+    const meName = wide() ? `이 화면 (${APP_ROLE})` : `이 폰 (${APP_ROLE})`;
+    box.querySelectorAll('button').forEach(b=>{ b.classList.toggle('on', b.dataset.t===cur); b.setAttribute('aria-pressed', b.dataset.t===cur);
+      if(b.dataset.t==='self') b.textContent=meName; if(b.dataset.t==='peer') b.textContent=`휴대폰 (${OTHER_ROLE})`; });
+    // 자리(BAR/CS)마다 다른 상황 묶음: 받는 기기의 것만 보이게. '둘 다'일 때는 둘 다 보이고 각자 주인에게 감
+    document.querySelectorAll('[data-role]').forEach(e=>{ const mine=e.dataset.role===APP_ROLE; e.classList.toggle('roff', cur==='self' ? !mine : cur==='peer' ? mine : false); });
+    const g=document.getElementById('gSimon'); if(g) g.textContent = cur==='both' ? '동료 · Simon (내 왼쪽)' : `동료 · Simon (${cur==='peer'?APP_ROLE:OTHER_ROLE} · 내 왼쪽)`;
+    const n=document.getElementById('tgtnote'); if(n){ const need = cur!=='self'; n.hidden=!need; n.classList.toggle('warn', need && !Peer.on);
+      n.textContent = !need ? '' : !Peer.on ? `휴대폰과 아직 이어지지 않았어요. 위쪽 ‘두 폰 연결’에 같은 팀 코드를 넣어 주세요.` : cur==='peer' ? `누르는 상황이 ${OTHER_ROLE} 휴대폰에서 일어나요.` : `누르는 상황이 두 기기에서 함께 일어나요. 자리마다 다른 상황은 그 자리의 기기로 가요.`; }
+  }
+  function set(t){ cur=t; paint(); }
+  // 단추 하나를 눌렀을 때: 어디에서 실행할지 정함
+  function run(btn){
+    const k=btn.dataset.d, label=btn.textContent.trim(), own=btn.closest('[data-role]');
+    let here = cur!=='peer', there = cur!=='self';
+    if(own){ const mine = own.dataset.role===APP_ROLE; here = mine; there = !mine; }   // 자리 전용 상황은 그 자리의 기기로만
+    if(there){
+      if(!Peer.on){ alert2('휴대폰과 아직 연결되지 않았어요 · 위쪽 ‘두 폰 연결’'); paint(); if(!here) return; }
+      else { Peer.send({t:'demo',k,label}); log(`→ 휴대폰(${OTHER_ROLE})으로 상황 보냄: ${label}`); }
+    }
+    if(here) demo(k);
+  }
+  document.addEventListener('click', e=>{ const b=e.target.closest('#tgt [data-t]'); if(b) set(b.dataset.t); });
+  setInterval(()=>{ if(cur!=='self') paint(); }, 3000);   // 연결 상태가 바뀌면 안내 문구도 바뀌게
+  return {paint, run, get cur(){return cur;}};
+})();
 function alert2(t){ const n=$('#cnote'); n.hidden=false; n.textContent=t; setTimeout(()=>{ if(n.textContent===t) n.hidden=true; },2500); }
 $('#autoRep').addEventListener('click', e=>{ const on=e.currentTarget.classList.toggle('on'); e.currentTarget.setAttribute('aria-checked',on); if(Remote.role==='remote') Remote.send({t:'auto',on}); });
 
