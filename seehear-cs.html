@@ -508,9 +508,10 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .login{background:linear-gradient(180deg,#e6e6e6 0%,#e4e8e3 10%,var(--bg) 45%,var(--pri) 100%);justify-content:center;align-items:center}
 .logo{display:flex;align-items:center;gap:4px;margin-bottom:26px}
 .logo b{font-size:calc(30px * var(--fsz,1));font-weight:900;letter-spacing:-.02em;color:var(--ink);margin-left:8px}
-.lbox{width:250px;background:rgba(120,150,125,.25);border-radius:18px;padding:2px 14px}
-.lbox input{display:block;width:100%;height:48px;border:0;background:none;font-size:calc(15px * var(--fsz,1));user-select:text}
-.lbox input+input{border-top:1px solid rgba(38,48,42,.2)}
+.lbox{width:250px;background:rgba(255,255,255,.58);border-radius:18px;padding:2px 16px}
+.lbox input{display:block;width:100%;height:50px;border:0;background:none;font-size:calc(16px * var(--fsz,1));font-weight:600;color:var(--ink);-webkit-text-fill-color:var(--ink);user-select:text}
+.lbox input::placeholder{color:#4a564e;-webkit-text-fill-color:#4a564e;opacity:1;font-weight:500}
+.lbox input+input{border-top:1px solid rgba(38,48,42,.28)}
 .lbox input:focus{outline:none}
 .lbtn{align-self:center;margin-left:180px;height:32px;padding:0 14px;border-radius:16px;background:var(--pri);color:#fff;font-weight:700;font-size:calc(14px * var(--fsz,1))}
 .lbtn:disabled{background:rgba(255,255,255,.6);color:var(--sub)}
