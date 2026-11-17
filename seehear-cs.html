@@ -78,6 +78,13 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .tgtnote{font-size:12px;line-height:1.45;color:var(--page-sub);margin:-2px 2px 10px}
 .tgtnote.warn{color:#c0392b}
 [data-role].roff{display:none}
+#schedGrp{margin:0 0 4px}
+#schedBtn{font-weight:700}
+#schedBtn:disabled{opacity:.45;cursor:default}
+#schedBtn.blink{background:#3f6b4c;color:#fff;animation:schedbl 1s ease-in-out infinite}
+@keyframes schedbl{50%{background:#8fb39a;box-shadow:0 0 0 6px rgba(63,107,76,.18)}}
+@media (prefers-reduced-motion:reduce){#schedBtn.blink{animation:none;outline:3px solid #8fb39a}}
+#schedNote{margin:8px 2px 4px}
 .tog{display:flex;justify-content:space-between;align-items:center;font-size:calc(12.5px * var(--fsz,1));padding:6px 0;gap:8px}
 .tog code{font-family:ui-monospace,Menlo,monospace;font-size:calc(12px * var(--fsz,1));background:var(--page-btn);border-radius:6px;padding:2px 8px}
 .link{color:var(--page-sub);text-decoration:underline;font-size:calc(12px * var(--fsz,1))}
@@ -633,6 +640,11 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <h2>상황 만들기</h2>
       <div class="tgt" id="tgt" role="group" aria-label="상황을 보낼 곳"><button data-t="self" class="on"></button><button data-t="peer"></button><button data-t="both">둘 다</button></div>
       <p class="tgtnote" id="tgtnote" hidden></p>
+      <div id="schedGrp">
+        <div class="grp" id="schedLab">매니저 Simon 역할 · 휴대폰에게</div>
+        <div class="demo"><button class="span2" id="schedBtn" disabled>시간표 보내기</button></div>
+        <p class="tgtnote" id="schedNote"></p>
+      </div>
       <div class="grp" data-role="BAR">주문 · POS에서</div>
       <div class="demo" data-role="BAR">
         <button data-d="newOrder">새 주문 들어옴</button>
@@ -719,7 +731,7 @@ const SCHED = [{h:'06:00',r:'BAR'},{h:'07:00',r:'POS'},{h:'08:00',r:'BAR'},{h:'0
 const APP_ROLE = 'CS';
 const IS_CS = APP_ROLE === 'CS';
 document.addEventListener('DOMContentLoaded', ()=>{
-  Target.paint();
+  Target.paint(); Sched.paint();
   { const h=document.getElementById('realH'); if(h) h.textContent=`실제 클립 연결 (${APP_ROLE} 클립)`; }
   if(IS_CS) document.title='SeeHear CS';
 });
@@ -1007,7 +1019,7 @@ const Peer = (() => {
   const state = () => !code ? 'off' : (peerSeen && Date.now()-peerSeen<15000) ? 'on' : 'wait';
   const stText = () => { const o=IS_CS?'휴대폰':'아이패드'; const st=state(); return st==='off' ? '연결 안 됨' : st==='on' ? `${o} 앱과 연결됨 · ${code}` : `${o} 앱을 찾는 중 · ${code}`; };
   // 세팅 > 기기 연결 화면이 열려 있으면 다시 그리지 않고 글자만 바꿈 (입력 중인 칸을 건드리지 않게)
-  function pageUi(){ const e=$m('#teamPgSt'); if(!e) return; const st=state(); e.className='tstat '+st; e.lastChild.textContent=stText(); const b=$m('#teamPgGo'); if(b) b.textContent = code ? '연결 끊기' : '연결'; }
+  function pageUi(){ const e=$m('#teamPgSt'); if(!e) return; const st=state(); e.className='tstat '+st; e.lastChild.textContent=stText(); const b=$m('#teamPgGo'); if(b) b.textContent = code ? '연결 끊기' : '연결'; const nx=$m('#teamPgNext'); if(nx) nx.textContent = st==='on' ? '다음' : '나중에 연결 · 그냥 시작'; }
   function start(c){
     c=(c||'').trim().toUpperCase(); if(c.length!==4){ toast('팀 코드 4글자를 넣어 주세요'); return; }
     stop(); code=c; try{ localStorage.setItem('seehear-team',c); }catch(e){}
@@ -1024,7 +1036,7 @@ const Peer = (() => {
   function stop(){ if(client){ try{client.end(true);}catch(e){} client=null; } if(bc){ try{bc.close();}catch(e){} bc=null; } clearInterval(pingIv); code=null; peerSeen=0; ui(); }
   function send(m){
     if(!code) return false;
-    m={...m, role:APP_ROLE, id:m.id||(Date.now()+'-'+Math.random().toString(16).slice(2,6))};
+    m={...m, role:APP_ROLE, w:waitingSched()?1:0, id:m.id||(Date.now()+'-'+Math.random().toString(16).slice(2,6))};
     try{ if(bc) bc.postMessage(m); }catch(e){}
     try{ if(client&&client.connected) client.publish(topic(), JSON.stringify(m)); }catch(e){}
     return true;
@@ -1035,8 +1047,14 @@ const Peer = (() => {
     seen.add(m.id); if(seen.size>500) seen=new Set([...seen].slice(-200));
     peerSeen=Date.now(); ui();
     const n=OTHER, roleOf=m.role;
+    if('w' in m) Sched.peerWait(!!m.w);
     switch(m.t){
       case 'ping': return;
+      case 'waitSched': log(`휴대폰(${roleOf})이 역할을 기다리고 있어요 → ‘시간표 보내기’를 눌러 주세요`); return;
+      case 'sched': {   // 아이패드(매니저 Simon)가 보낸 시간표
+        if(!waitingSched()){ send({t:'schedRes',r:'no'}); return; }
+        S.propIn=true; sig('prop','green','fast','L','pers'); setMsg('Simon 매니저가 시간표를 제안했어요','say'); log('[아이패드] Simon 매니저가 시간표를 보냄'); render(); return; }
+      case 'schedRes': { const t = m.r==='ok' ? '휴대폰: 시간표 좋아요' : m.r==='chg' ? `휴대폰이 시간표를 바꿔 보냈어요 (${m.rows||''})` : '휴대폰이 아직 역할 정하는 화면이 아니에요'; log(t); alert2(t); return; }
       case 'demo': {   // 상대 기기의 조작판이 보낸 상황
         const ok = m.k==='reset' || S.screen==='main';
         log(`[조작판 · ${roleOf}] 상황 받음: ${m.label||m.k}${ok?'':' (아직 로그인 전이라 실행하지 못함)'}`);
@@ -1134,6 +1152,7 @@ function render(){
   S.lastBody=bodySig;
   let h = '';
   if(sc==='login') h = loginView();
+  else if(sc==='teamLink') h = teamLinkView();
   else if(sc==='clipLink') h = clipLinkView();
   else if(sc==='rolepick') h = rolePickView();
   else if(sc==='pHome') h = pHomeView();
@@ -1157,6 +1176,23 @@ function loginView(){
     <div class="lbox"><input id="lid" placeholder="사번" inputmode="numeric" autocomplete="off" aria-label="사번"><input id="lpw" type="password" placeholder="비밀번호" aria-label="비밀번호"></div>
     <button class="lbtn" id="lgo" data-a="login" disabled>로그인</button>
     <button class="back plain" data-a="fill" style="color:var(--card);margin-top:30px;align-self:center">시연용 사번 넣기</button>
+  </div>`;
+}
+// 전용 앱의 아이패드 화면인지 (넓은 화면)
+function IS_PAD(){ return !!window.__nativeApp && innerWidth >= 700; }
+// 휴대폰이 '역할을 정하는 중' 화면에서 매니저의 시간표를 기다리는지
+function waitingSched(){ return typeof S!=='undefined' && !!S && !IS_CS && S.screen==='pHome' && !S.propIn && !S.propDone && !S.propSent; }
+function teamLinkView(){
+  const o = IS_CS ? '휴대폰' : '아이패드', draft = (S.set.teamDraft!=null ? S.set.teamDraft : (Peer.code||'')), st = Peer.state;
+  return `<div class="full" style="padding-top:88px;gap:14px">
+    <p class="ttl">${o} 앱과 연결해요</p>
+    <div class="tstat ${st}" id="teamPgSt" style="background:var(--card)"><i></i><span>${Peer.stText}</span></div>
+    <input class="tcode" id="teamCode" style="background:var(--card)" maxlength="4" value="${esc(draft)}" placeholder="팀 코드 4글자" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="팀 코드">
+    <button class="ghost" id="teamPgGo" data-a="teamPg">${Peer.code?'연결 끊기':'연결'}</button>
+    <ol class="tsteps" style="background:var(--card);border-radius:16px;padding:14px"><li><i>1</i><span>${o} 화면 맨 위 <b>‘두 폰 연결’</b> 옆의 <b>팀 코드 4글자</b>를 확인해요.</span></li><li><i>2</i><span>위 칸에 <b>같은 코드</b>를 넣고 <b>연결</b>을 눌러요.</span></li><li><i>3</i><span>초록 점과 <b>‘연결됨’</b>이 뜨면 <b>다음</b>으로 넘어가요.</span></li></ol>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+      <button class="prim" id="teamPgNext" data-a="teamNext">${st==='on'?'다음':'나중에 연결 · 그냥 시작'}</button>
+    </div>
   </div>`;
 }
 function clipLinkView(){
@@ -1747,12 +1783,15 @@ function act(a, d={}){
   const v=d.v, i=d.i!=null?+d.i:null;
   switch(a){
   case 'fill': $('#lid').value='2020212028'; $('#lpw').value='seehear'; $('#lgo').disabled=false; break;
-  case 'login': S.screen='clipLink'; log('Peter 로그인'); render(); break;
+  case 'login': S.screen = IS_PAD() ? 'clipLink' : 'teamLink'; S.set.teamDraft=null; log('Peter 로그인'); render(); break;   // 휴대폰은 아이패드와 연결하는 화면부터
+  case 'teamNext': S.screen='clipLink'; S.set.teamDraft=null; log(Peer.on?'아이패드 앱과 연결하고 시작':'아이패드 연결 없이 시작'); render(); break;
   case 'clipBle': Clip.ble(); break;
   case 'clipUsb': Clip.usb(); break;
   case 'clipNext': S.screen='rolepick'; log(Clip.on?'클립 연결하고 시작':'클립 없이 시작 (시연)'); render(); break;
   case 'pickMgr': toast('이 시연은 파트너 · BAR 화면만 있어요'); break;
-  case 'pickPartner': S.screen='pHome'; S.min=RC.startMin; if(IS_CS){ S.propDone=true; S.propIn=false; setMsg('휴게 끝 · 10:00부터 CS','ok',null,6000); log('CS 앱: 아침에 정한 시간표 그대로 · 10:00 CS 시작 장면'); render(); break; } render();
+  case 'pickPartner': S.screen='pHome'; S.min=RC.startMin;
+    if(!IS_CS && Peer.on){ render(); Peer.send({t:'waitSched'}); log('아이패드(매니저)의 시간표를 기다리는 중'); break; }   // 연결돼 있으면 아이패드의 '시간표 보내기'를 기다림
+    if(IS_CS){ S.propDone=true; S.propIn=false; setMsg('휴게 끝 · 10:00부터 CS','ok',null,6000); log('CS 앱: 아침에 정한 시간표 그대로 · 10:00 CS 시작 장면'); render(); break; } render();
     later(2400,()=>{ if(S.screen==='pHome'&&!S.propSent&&!S.propIn){ S.propIn=true; sig('prop','green','fast','L','pers'); setMsg('Simon 매니저가 시간표를 제안했어요','say'); log('Simon 매니저가 시간표를 제안함'); render(); } }); break;
   case 'callMgr': sig('call-mgr','green','slow','L','pers'); setMsg('Simon 매니저를 불렀어요','dark',null,4000); log('매니저 부르기'); render(); later(2000,()=>{unsig('call-mgr'); if(S.screen==='pHome'&&!S.propSent){S.propIn=true;setMsg('Simon 매니저가 시간표를 제안했어요','say');sig('prop','green','fast','L','pers');render();}}); break;
   case 'openPadMgr': S.sheet={k:'mgrPad'}; render(); break;
@@ -1760,9 +1799,9 @@ function act(a, d={}){
   case 'propOpen': S.prop.open = S.prop.open===i ? null : i; unsig('prop'); render(); break;
   case 'propCancel': S.prop.edit=false; S.prop.open=null; S.prop.rows=JSON.parse(JSON.stringify(S.prop.orig)); if(S.screen==='proposal') S.screen='pHome'; render(); break;
   case 'propSet': { const r=S.prop.rows[i]; if(v==='휴게'){ S.prop.rows.forEach((x,k)=>{ if(x.b){x.b=0; x.r=(S.prop.orig[k]&&!S.prop.orig[k].b)?S.prop.orig[k].r:'BAR';} }); r.b=1; r.r='휴게'; } else { r.b=0; r.r=v; } if(!S.prop.edit) S.prop.open=null; render(); break; }
-  case 'propSend': S.prop.edit=false; S.prop.open=null; S.propSent=true; log('바꾼 줄: '+S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+r.r).join(', ')); S.screen='pHome'; setMsg('바꾼 시간표 보냄 · Simon 대답 기다리는 중','dark'); S.msg.sticky=true; log('바꾼 시간표를 Simon에게 보냄'); render();
+  case 'propSend': if(Peer.on) Peer.send({t:'schedRes',r:'chg',rows:S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+(r.b?'휴게':r.r)).join(', ')}); S.prop.edit=false; S.prop.open=null; S.propSent=true; log('바꾼 줄: '+S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+r.r).join(', ')); S.screen='pHome'; setMsg('바꾼 시간표 보냄 · Simon 대답 기다리는 중','dark'); S.msg.sticky=true; log('바꾼 시간표를 Simon에게 보냄'); render();
     later(2800,()=>{ sig('rep-Simon','blue','slow','L','reply'); later(5000,()=>unsig('rep-Simon')); setMsg('Simon이 좋다고 했어요 · 시간표 확정','ok',null,6000); S.propDone=true; S.propSent=false; S.propIn=false; log('Simon이 시간표를 받아들임'); render(); }); break;
-  case 'propOk': unsig('prop'); S.propDone=true; S.propIn=false; setMsg('오늘 시간표가 정해졌어요','ok',null,5000); log('시간표 좋아요'); render(); break;
+  case 'propOk': if(Peer.on) Peer.send({t:'schedRes',r:'ok'}); unsig('prop'); S.propDone=true; S.propIn=false; setMsg('오늘 시간표가 정해졌어요','ok',null,5000); log('시간표 좋아요'); render(); break;
   case 'toBar': S.screen='main'; S.min=RC.sceneMin; S.tab=null; S.view='home'; setMsg(null); S.dots={group:false,pers:false,alarm:false}; log(`${RC.role} 화면 시작 · ${hhmm(S.min)} 장면으로 이동`); render(); break;
 
   case 'msgGo': goMsg(); break;
@@ -2075,6 +2114,23 @@ document.querySelector('.side').addEventListener('click', e=>{
   const b=e.target.closest('[data-d]'); if(b){ if(Remote.role==='remote'){ if(!Remote.send({t:'demo',k:b.dataset.d})) alert2('휴대폰과 아직 연결되지 않았어요'); } else Target.run(b); }
   const c=e.target.closest('[data-c]'); if(c){ if(Remote.role==='remote'){ if(['ble','usb'].includes(c.dataset.c)) alert2('클립 연결은 휴대폰에서 해 주세요'); else Remote.send({t:'clip',k:c.dataset.c}); } else Clip[c.dataset.c](); }
 });
+// ---------- 시간표 보내기 (아이패드가 매니저 Simon 역할로 휴대폰에게) ----------
+const Sched = (()=>{
+  let wait=false;
+  const el = id => document.getElementById(id);
+  function paint(){
+    const b=el('schedBtn'), n=el('schedNote'), g=el('schedGrp'); if(!b) return;
+    if(g) g.hidden = !IS_CS;                       // CS(아이패드) 쪽 조작판에만
+    const ready = Peer.on && wait;
+    b.disabled = !ready; b.classList.toggle('blink', ready);
+    if(n) n.textContent = !Peer.on ? '휴대폰과 연결되면 쓸 수 있어요.' : ready ? '휴대폰이 ‘역할을 정하는 중’ 화면에서 기다리고 있어요. 눌러서 시간표를 보내 주세요.' : '휴대폰이 ‘역할을 정하는 중’ 화면에 오면 단추가 깜박여요.';
+  }
+  function peerWait(v){ if(v!==wait){ wait=v; paint(); } }
+  document.addEventListener('click', e=>{ const b=e.target.closest('#schedBtn'); if(!b || b.disabled) return;
+    Peer.send({t:'sched'}); log('→ 휴대폰으로 시간표 보냄 (매니저 Simon 역할)'); wait=false; paint(); });
+  setInterval(paint, 2000);
+  return {paint, peerWait};
+})();
 // ---------- 상황을 보낼 곳 (이 기기 / 상대 휴대폰 / 둘 다) ----------
 const Target = (()=>{
   let cur='self';
