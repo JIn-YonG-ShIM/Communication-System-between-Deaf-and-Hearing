@@ -153,6 +153,18 @@ body.padapp .stage{align-self:flex-start}
 body.padapp .side{flex:1;width:auto;min-width:0;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:18px}
 body.padapp .sidecols{display:block;column-width:300px;column-gap:12px}
 body.padapp .sidecols>.box{break-inside:avoid;margin:0 0 12px}
+/* 아이패드: '지나간 일'은 숨기고, 그 자리(오른쪽 칸)에 '상황 만들기' */
+body.padapp #logbox{display:none}
+body.padapp.cols2 .sidecols{column-count:2;column-width:auto}
+body.padapp.cols2 #scenebox{break-before:column;break-inside:auto}
+.tcode{height:58px;border-radius:16px;background:var(--row);border:0;text-align:center;font-size:calc(24px * var(--fsz,1));font-weight:800;letter-spacing:.32em;text-indent:.32em;text-transform:uppercase;width:100%;color:var(--ink);-webkit-text-fill-color:var(--ink);user-select:text}
+.tcode::placeholder{color:var(--sub);-webkit-text-fill-color:var(--sub);opacity:.7;letter-spacing:.1em;text-indent:0;font-weight:600;font-size:calc(16px * var(--fsz,1))}
+.tcode:focus{outline:2px solid var(--pri)}
+.tstat{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fsz,1));font-weight:700;padding:12px 14px;border-radius:16px;background:var(--row)}
+.tstat i{width:10px;height:10px;border-radius:50%;background:#b8c0ba;flex:none}
+.tstat.on i{background:#34a853}.tstat.wait i{background:#f2b63c}
+.tsteps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:calc(13px * var(--fsz,1));line-height:1.45;color:var(--sub)}
+.tsteps li{display:flex;gap:8px}.tsteps li b{color:var(--ink)}.tsteps li>i{flex:none;font-style:normal;font-weight:800;color:var(--ink)}
 body.padapp .demo button,body.padapp .box button.link{min-height:40px}
 body.padapp [data-c="usb"]{display:none}
 body.padapp .mbtog{display:none}
@@ -597,7 +609,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <p class="note">Simon(CS)은 내 왼쪽, Lila(POS)는 내 오른쪽에 있다고 보고 보낸 사람 쪽 불이 켜져요. 위험·손님 호출·그룹 대화는 양쪽이 켜져요. 빛은 정해진 횟수만 깜박이고 꺼져요 (빠름 8번 · 느림 5번 · 켜짐 5초 · 위험 13번). 더 급한 신호가 오면 그 빛이 먼저 나오고, 밀린 신호는 멈춰 있다가 급한 신호가 해결된 뒤 남은 횟수만큼 이어서 깜박여요. 대답·확인을 요구하는 빛(빠름·켜짐)은 그 전에라도 내가 답하거나 확인하면 바로 꺼져요. 자세한 내용은 앱 화면에 남아요.</p>
     </section>
     <section class="box" id="realbox">
-      <h2>실제 클립 연결 · XIAO ESP32-C3</h2>
+      <h2 id="realH">실제 클립 연결</h2>
       <div class="demo">
         <button data-c="ble">블루투스로 연결</button>
         <button data-c="usb">USB 케이블로 연결</button>
@@ -617,7 +629,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       </details>
       <p class="note" id="cnote" hidden></p>
     </section>
-    <section class="box">
+    <section class="box" id="scenebox">
       <h2>상황 만들기</h2>
       <div class="tgt" id="tgt" role="group" aria-label="상황을 보낼 곳"><button data-t="self" class="on"></button><button data-t="peer"></button><button data-t="both">둘 다</button></div>
       <p class="tgtnote" id="tgtnote" hidden></p>
@@ -672,7 +684,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <div class="mirror"><span>클립</span><b id="mClip">—</b></div>
       <div class="mirror"><span>메시지 띠</span><b id="mMsg">—</b></div>
     </section>
-    <section class="box">
+    <section class="box" id="logbox">
       <h2>지나간 일</h2>
       <ul class="log" id="log"></ul>
     </section>
@@ -708,6 +720,7 @@ const APP_ROLE = 'CS';
 const IS_CS = APP_ROLE === 'CS';
 document.addEventListener('DOMContentLoaded', ()=>{
   Target.paint();
+  { const h=document.getElementById('realH'); if(h) h.textContent=`실제 클립 연결 (${APP_ROLE} 클립)`; }
   if(IS_CS) document.title='SeeHear CS';
 });
 const RC = IS_CS
@@ -990,7 +1003,11 @@ const Peer = (() => {
   let code=null, client=null, bc=null, peerSeen=0, seen=new Set(), pingIv=null;
   const $m = s => document.querySelector(s);
   const topic = () => `seehear/${code}/team`;
-  function ui(){ const e=$m('#teamSt'); if(!e) return; const live = peerSeen && Date.now()-peerSeen<15000; e.classList.toggle('on',!!live); e.textContent = !code ? '—' : live ? `${IS_CS?'BAR':'CS'} 폰 연결됨 · ${code}` : (client&&client.connected) ? '상대 폰 기다리는 중' : '중계소 연결 중…'; }
+  function ui(){ const e=$m('#teamSt'); if(!e) return; const live = peerSeen && Date.now()-peerSeen<15000; e.classList.toggle('on',!!live); e.textContent = !code ? '—' : live ? `${IS_CS?'BAR':'CS'} 폰 연결됨 · ${code}` : (client&&client.connected) ? '상대 폰 기다리는 중' : '중계소 연결 중…';  pageUi(); }
+  const state = () => !code ? 'off' : (peerSeen && Date.now()-peerSeen<15000) ? 'on' : 'wait';
+  const stText = () => { const o=IS_CS?'휴대폰':'아이패드'; const st=state(); return st==='off' ? '연결 안 됨' : st==='on' ? `${o} 앱과 연결됨 · ${code}` : `${o} 앱을 찾는 중 · ${code}`; };
+  // 세팅 > 기기 연결 화면이 열려 있으면 다시 그리지 않고 글자만 바꿈 (입력 중인 칸을 건드리지 않게)
+  function pageUi(){ const e=$m('#teamPgSt'); if(!e) return; const st=state(); e.className='tstat '+st; e.lastChild.textContent=stText(); const b=$m('#teamPgGo'); if(b) b.textContent = code ? '연결 끊기' : '연결'; }
   function start(c){
     c=(c||'').trim().toUpperCase(); if(c.length!==4){ toast('팀 코드 4글자를 넣어 주세요'); return; }
     stop(); code=c; try{ localStorage.setItem('seehear-team',c); }catch(e){}
@@ -1059,7 +1076,7 @@ const Peer = (() => {
     }
     render();
   }
-  return {start, stop, send, get on(){ return live(); }, get code(){ return code; }};
+  return {start, stop, send, get on(){ return live(); }, get code(){ return code; }, get state(){ return state(); }, get stText(){ return stText(); }};
 })();
 
 /* ───── 아이콘 ───── */
@@ -1547,10 +1564,19 @@ function setView(){
   const head = t => `<h4 style="font-size:calc(22px * var(--fsz,1))">${t}</h4><button class="sx" data-a="setPage" data-v="" aria-label="세팅으로 돌아가기">${X}</button>`;
   const item = (k,l,v) => `<button class="si" data-a="setPage" data-v="${k}">${l}<span>${v} ›</span></button>`;
   if(!p) return `<h4 style="font-size:calc(22px * var(--fsz,1))">세팅</h4><button class="sx" data-a="closeTab" aria-label="닫기">${X}</button>
+    <span class="sg">기기</span><div class="sl">${item('team', IS_CS?'휴대폰 앱과 연결':'아이패드 앱과 연결', {off:'연결 안 됨',on:'연결됨',wait:'찾는 중'}[Peer.state])}</div>
     <span class="sg">클립</span><div class="sl">${item('clip','클립 연결','클립 1개 연결됨')}${item('cvd','클립 색 모드',st.cvd?'색각이상자용':'일반')}${item('bright','클립 밝기',st.bright)}${item('loud','클립 큰 소리 감지',st.loud||'보통')}</div>
     <span class="sg">소통</span><div class="sl">${item('pref','내가 선호하는 소통 방식',st.pref.join(' · ')||'없음')}${item('edit','요청 버튼 편집',(S.ing.length+S.sup.length)+'개')}${item('speak','말로 위험 알리기',st.speak.on?(Voice.on?'듣는 중':'켜짐'):'꺼짐')}</div>
     <span class="sg">알람</span><div class="sl">${item('mach','알람 받을 기계','내 역할 기준')}${item('brk','휴식 중 알림',Object.values(st.brk).some(Boolean)?'위험 외 '+Object.values(st.brk).filter(Boolean).length+'개':'위험만')}</div>
     <span class="sg">화면 · 계정</span><div class="sl">${item('font','글자 크기',{0.9:'작게',1:'보통',1.12:'크게'}[S.fsz])}${item('theme','화면 색',{sage:'세이지',mist:'미스트 슬레이트',oat:'오트 & 딥그린'}[S.theme])}${item('me','내 정보 · 로그아웃','')}</div>`;
+  if(p==='team'){
+    const o = IS_CS ? '휴대폰' : '아이패드', draft = (st.teamDraft!=null ? st.teamDraft : (Peer.code||''));
+    return `${head(o+' 앱과 연결')}<div class="tstat ${Peer.state}" id="teamPgSt"><i></i><span>${Peer.stText}</span></div>
+    <span class="sg">팀 코드 4글자</span><input class="tcode" id="teamCode" maxlength="4" value="${esc(draft)}" placeholder="예: CAFE" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="팀 코드">
+    <button class="prim" id="teamPgGo" data-a="teamPg">${Peer.code?'연결 끊기':'연결'}</button>
+    <span class="sg">연결하는 법</span><ol class="tsteps"><li><i>1</i><span>${IS_CS?'휴대폰 앱의 세팅 › 아이패드 앱과 연결을 열어요.':'아이패드 화면 맨 위 <b>‘두 폰 연결’</b> 옆에 적힌 <b>팀 코드 4글자</b>를 확인해요.'}</span></li><li><i>2</i><span>${IS_CS?'이 화면의 팀 코드와 <b>같은 코드</b>를 휴대폰에 넣고 연결을 눌러요.':'위 칸에 <b>같은 코드</b>를 넣고 <b>연결</b>을 눌러요.'}</span></li><li><i>3</i><span>초록 점과 함께 <b>‘연결됨’</b>이 뜨면 끝이에요. 요청·메시지·위험 알림이 서로에게 가요.</span></li></ol>
+    <span class="lab">두 기기 모두 인터넷(Wi‑Fi 또는 데이터)이 켜져 있어야 해요. 코드는 기억돼서 다음에는 자동으로 연결돼요.</span>`;
+  }
   if(p==='clip') return `${head('클립 연결')}<div class="hatd"><div class="line"><span class="pill" style="border:0;background:var(--card)">● ${Clip.on?(Clip.mode==='ble'?'실제 클립 연결됨 · 블루투스':'실제 클립 연결됨 · USB'):'연결됨 · 시연'}</span><span class="lab">80% 🔋</span></div>${clipSvg()}</div>
     <div class="sl"><div class="si">장착 위치<span>모자 챙 안쪽 · 1개</span></div><div class="si">장착 방향<span style="color:var(--pri);font-weight:700">왼쪽 · 오른쪽 맞음 ✓</span></div></div>
     <button class="prim" data-a="clipTest" data-v="LR">왼쪽 · 오른쪽 빛 테스트</button><button class="ghost" data-a="clipRe">${Clip.on?'다시 연결':'클립 연결하기'}</button>`;
@@ -1881,7 +1907,10 @@ function act(a, d={}){
   case 'cStar': { const t=S.card.text.trim(); const k=S.card.favs.findIndex(f=>f.t===t); if(k>=0) S.card.favs.splice(k,1); else S.card.favs.push({t,g:'동료'}); render(); break; }
   case 'cColor': S.card.color=v; render(); break;
 
-  case 'setPage': S.set.page=v||null; S.set.editSel=null; render(); break;
+  case 'setPage': S.set.page=v||null; S.set.editSel=null; S.set.teamDraft=null; render(); break;
+  case 'teamPg': { const sync=()=>{ const i=$('#teamIn'), g=$('#teamGo'); if(i) i.value=Peer.code||i.value; if(g) g.textContent=Peer.code?'끊기':'연결'; };
+    if(Peer.code){ Peer.stop(); log('두 폰 연결 끊음'); } else { const c=($('#teamCode')?$('#teamCode').value:'')||''; S.set.teamDraft=c.toUpperCase(); Peer.start(c); if(Peer.code) S.set.teamDraft=null; }
+    sync(); render(); break; }
   case 'clipTest': { if(Clip.on) Clip.test(); const sides = v==='LR'?['L','R']:[v]; sides.forEach((s,k)=>later(k*900,()=>{ sig('test-'+s,'white','on',s,'test'); later(800,()=>unsig('test-'+s)); })); break; }
   case 'clipRe': Clip.ble(); break;
   case 'clipOffBtn': Clip.off(); break;
@@ -2094,7 +2123,9 @@ document.querySelectorAll('#modebar [data-m]').forEach(b=>b.addEventListener('cl
 $('#roomGo').addEventListener('click',()=>Remote.startRemote($('#roomIn').value));
 $('#teamGo').addEventListener('click',()=>{ if(Peer.code){ Peer.stop(); $('#teamGo').textContent='연결'; log('두 폰 연결 끊음'); } else { Peer.start($('#teamIn').value); if(Peer.code) $('#teamGo').textContent='끊기'; } });
 $('#teamIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){ Peer.start(e.target.value); if(Peer.code) $('#teamGo').textContent='끊기'; } });
-(()=>{ let c=''; try{ c=localStorage.getItem('seehear-team')||''; }catch(e){} if(c){ $('#teamIn').value=c; setTimeout(()=>{ Peer.start(c); if(Peer.code) $('#teamGo').textContent='끊기'; }, 800); } })();
+(()=>{ let c=''; try{ c=localStorage.getItem('seehear-team')||''; }catch(e){}
+  if(!c && window.__nativeApp && innerWidth>=700){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; c=Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join(''); }   // 아이패드 앱: 코드가 없으면 하나 만들어 둠
+  if(c){ $('#teamIn').value=c; setTimeout(()=>{ Peer.start(c); if(Peer.code) $('#teamGo').textContent='끊기'; }, 800); } })();
 $('#roomIn').addEventListener('keydown',e=>{ if(e.key==='Enter') Remote.startRemote(e.target.value); });
 
 /* ───── 크기 맞추기 ───── */
@@ -2122,6 +2153,7 @@ function fit(){
     const k = Math.max(0.3, Math.min(aW / w, aH / h, 1.15));
     P.style.transform = `scale(${k})`;
     $('#stage').style.width = w*k+'px'; $('#stage').style.height = h*k+'px';
+    document.body.classList.toggle('cols2', wrapEl.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight) - 20 - w*k >= 620);
     return;
   }
   const native = (small || (window.__nativeApp && innerWidth < 700)) && mode==='phone' && document.body.classList.contains('mbhide') && !land;
@@ -2176,6 +2208,9 @@ const Intro = (()=>{
 })();
 // 전용 앱 · 아이패드에서는 켤 때마다 안내부터 (전시에서는 매번 새 관람객)
 if(window.__nativeApp && innerWidth >= 700) Intro.open();
+
+document.addEventListener('input', e=>{ if(e.target && e.target.id==='teamCode'){ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); S.set.teamDraft=e.target.value; } });
+document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='teamCode' && e.key==='Enter'){ e.target.blur(); act('teamPg'); } });
 
 addEventListener('resize', fit);
 // 아이패드 전용 앱: 상태바·홈 막대 자리(안전 영역)나 글꼴이 늦게 잡혀도 휴대폰 크기를 다시 맞춤
