@@ -296,6 +296,20 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .step.no span{color:var(--sub);font-weight:400}
 .hrow{min-height:44px;border-radius:12px;background:var(--row);display:flex;justify-content:space-between;align-items:center;padding:0 12px 0 14px;font-weight:700;font-size:calc(14px * var(--fsz,1));width:100%;text-align:left}
 .hrow.mk{background:var(--card);border:1.5px solid var(--ink)}
+/* CS 사이클 */
+.csbar{height:6px;border-radius:3px;background:var(--row);overflow:hidden;flex:none}
+.csbar i{display:block;height:100%;border-radius:3px;background:var(--pri);transition:width .35s ease}
+.hrow.csph{transition:background .2s,color .2s}
+.hrow.csph .cst{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fsz,1));font-weight:700;color:inherit}
+.hrow.csph .cst b{font-weight:800}
+.hrow.csph em{font-style:normal;margin-left:8px;font-size:10px;opacity:.7}
+.hrow.csph.open{background:var(--ink);color:#fff}.hrow.csph.open span{color:#fff}
+.hrow.csph.all:not(.open){background:var(--sel)}.hrow.csph.all:not(.open) span{color:var(--pri);font-weight:700}
+.si.cstask{background:var(--row);transition:background .2s}
+.si.cstask>span:first-child{font-size:calc(14px * var(--fsz,1));color:var(--ink);transition:color .2s}
+.si.cstask.d>span:first-child{color:var(--sub);text-decoration:line-through}
+.si.cstask:active{background:var(--sel)}
+.si.cstask.pop{animation:pop .45s ease}
 .hrow span{font-size:calc(12px * var(--fsz,1));font-weight:500;color:var(--sub)}
 .lbl{height:28px;border-radius:14px;padding:0 10px;font-size:calc(11px * var(--fsz,1));font-weight:700;border:1.5px dashed var(--ink);background:var(--card)}
 .lbl.on{background:var(--ink);color:#fff;border-style:solid}
@@ -752,10 +766,10 @@ function fresh(){
     screen:'login', tab:null, view:'home', sheet:null, land:false, roleMenu:false, pick:false,
     min: 5*60+52, theme:'sage', fsz:1,
     msg:null,
-    orders:[{n:4,d:'아이스 라떼 T'},{n:5,d:'아메리카노 G'},{n:6,d:'바닐라 라떼 T'}], done:[{n:1,d:'아메리카노 G'},{n:2,d:'카페 모카 T'},{n:3,d:'아이스 아메리카노 V'}], nextNo:7, showDone:false,
+    orders:[], done:[], nextNo:1, showDone:false,
     ing: JSON.parse(JSON.stringify(DEF_ING)), sup:[...DEF_SUP],
     req:null, danger:null, ho:{stage:'none', step:2, labels:{}, note:''}, onBreak:false, breakDone:false,
-    cs:{phase:1, done:{'0-0':1,'0-1':1,'1-0':1}, reqs:[]},
+    cs:{phase:0, done:{}, round:1, last:null, reqs:[]},   // 처음에는 사이클을 아직 돌지 않은 상태
     alarms:[], machinesOn:['COFFEE 1'],
     signals:[], dots:{group:false,pers:false,alarm:false},
     group:[{id:1,from:'Simon',type:'text',v:'우유 입고가 10시로 바뀌었어요',t:'8:02'}],
@@ -1147,7 +1161,7 @@ function render(){
   if(S.screen==='main' && S.tab==='card') P.dataset.cc=S.card.color; else delete P.dataset.cc;
   const sc = S.screen;
   const key0=[sc,S.tab,S.view,S.set.page,S.chatWith,S.card.menu&&'cm:'+S.card.menu,S.sheet&&S.sheet.k,S.land,S.onBreak,S.call&&S.call.st,S.propIn,S.prop.edit].join('|');
-  const bodySig = JSON.stringify([S.orders,S.done,S.showDone,S.ing,S.sup,S.req,S.danger,S.ho,S.alarms,S.machinesOn,S.dots,S.group.length,S.reactFor,S.compose,S.emoSel,S.chats[S.chatWith||'Simon'].length,S.card,S.set,S.prop,S.propSent,S.propIn,S.propDone,S.call&&[S.call.more,S.call.stt,S.call.tts],S.theme,S.fsz,(S.tab==='alarm'||S.set.page==='clip'||S.screen==='clipLink')?S.clipWord:'',S.clipErr,Clip.on]);
+  const bodySig = JSON.stringify([S.orders,S.done,S.showDone,S.ing,S.sup,S.req,S.danger,S.ho,S.alarms,S.machinesOn,S.dots,S.group.length,S.reactFor,S.compose,S.emoSel,S.chats[S.chatWith||'Simon'].length,S.card,S.set,S.prop,S.propSent,S.propIn,S.propDone,S.call&&[S.call.more,S.call.stt,S.call.tts],S.theme,S.fsz,(S.tab==='alarm'||S.set.page==='clip'||S.screen==='clipLink')?S.clipWord:'',S.clipErr,Clip.on,S.cs,Peer.code,Peer.state]);
   if(key0===S.lastKey && bodySig===S.lastBody && P.querySelector('.msg')){ msgOnly(); return; }
   S.lastBody=bodySig;
   let h = '';
@@ -1359,22 +1373,27 @@ function csReqRows(){
   if(!rs.length) return `<div class="ord" style="color:var(--sub);font-weight:500">들어온 요청 없음</div>`;
   return rs.map(q=>`<div class="cur${q.st==='going'?'':' inbox'}" style="padding:10px 12px 10px 14px"><span><small>${q.from} · ${RC.partners[q.from]}${q.st==='going'?' · 가져가는 중':''}</small><b>${esc(q.what)}</b></span>${q.st==='going'?`<button class="done" data-a="csReqDone" data-v="${q.id}">전달했어요</button>`:`<button class="done" data-a="csReqGo" data-v="${q.id}">가져갈게요</button>`}</div>`).join('');
 }
+function csCount(){ let k=0,n=0; CS_CYCLE.forEach((ph,i)=>ph.tasks.forEach((_,j)=>{ n++; if(S.cs.done[i+'-'+j]) k++; })); return {k,n}; }
 function csCycleRows(){
-  const c=S.cs;
-  return CS_CYCLE.map((ph,i)=>{
-    const n=ph.tasks.length, k=ph.tasks.filter((_,j)=>c.done[i+'-'+j]).length;
-    const head = `<button class="hrow${i===c.phase?' mk':''}" data-a="csPhase" data-v="${i}" style="${i===c.phase?'background:var(--ink);color:#fff':''}">${['①','②','③'][i]} ${ph.t}<span style="${i===c.phase?'color:#fff':''}">${k===n?'다 했어요 ✓':`${k} / ${n}`}</span></button>`;
-    if(i!==c.phase) return head;
-    const list = ph.tasks.map((t,j)=>`<button class="si" data-a="csTask" data-v="${i}-${j}" style="background:var(--row)"><span style="${c.done[i+'-'+j]?'color:var(--sub);text-decoration:line-through':''}">${t}</span><span class="tick${c.done[i+'-'+j]?' on':''}"></span></button>`).join('');
+  const c=S.cs, tot=csCount();
+  const bar = `<div class="csbar" role="progressbar" aria-valuemin="0" aria-valuemax="${tot.n}" aria-valuenow="${tot.k}"><i style="width:${Math.round(tot.k/tot.n*100)}%"></i></div>`;
+  const rows = CS_CYCLE.map((ph,i)=>{
+    const n=ph.tasks.length, k=ph.tasks.filter((_,j)=>c.done[i+'-'+j]).length, open=i===c.phase, all=k===n;
+    const stat = all ? '다 했어요 ✓' : k ? `${k} / ${n}` : '시작 전';
+    const head = `<button class="hrow csph${open?' open':''}${all?' all':''}" data-a="csPhase" data-v="${i}" aria-expanded="${open}"><span class="cst"><b>${['①','②','③'][i]}</b>${ph.t}</span><span>${stat}<em>${open?'▴':'▾'}</em></span></button>`;
+    if(!open) return head;
+    const list = ph.tasks.map((t,j)=>{ const id=i+'-'+j, d=c.done[id]; return `<button class="si cstask${d?' d':''}${c.last===id?' pop':''}" data-a="csTask" data-v="${id}" aria-pressed="${!!d}"><span>${t}</span><span class="tick${d?' on':''}"></span></button>`; }).join('');
     return head + `<div class="sl" style="margin:-4px 0 2px">${list}</div>`;
   }).join('');
+  const end = tot.k===tot.n ? `<div class="cur inbox" style="padding:10px 12px 10px 14px"><span><small>CS 사이클 · ${c.round}바퀴</small><b>한 바퀴 끝났어요</b></span><button class="done" data-a="csNext">다음 바퀴</button></div>` : '';
+  return bar + end + rows;
 }
 function csHomeView(){
   const r=S.prop.rows; const nowH=Math.floor(S.min/60); let cur=r[0]; r.forEach(x=>{ if(+x.h.slice(0,2)<=nowH) cur=x; });
   const nxt=r.find(x=>+x.h.slice(0,2)>+cur.h.slice(0,2)); const endH=nxt?nxt.h:'11:00';
   return `<div class="line"><span class="pill">책임자 Simon</span><span class="pill">CS · ${cur.h} – ${endH}</span></div>
     <span class="lab">들어온 요청${S.cs.reqs.length?` · ${S.cs.reqs.length}`:''}</span>${csReqRows()}
-    <span class="lab">CS 사이클 · 지금 ${['①','②','③'][S.cs.phase]} ${CS_CYCLE[S.cs.phase].t}</span>${csCycleRows()}
+    <span class="lab">CS 사이클 · ${S.cs.round}바퀴째 · ${csCount().k} / ${csCount().n}</span>${csCycleRows()}
     <button class="danger" data-a="danger">위험 알리기</button>
     ${hoBtnHtml()}`;
 }
@@ -1823,8 +1842,17 @@ function act(a, d={}){
   case 'closeTab': if(S.pick){ S.pick=false; peopleDom(false); return; }
     if(S.tab==='card'){ pushHist(); S.card.text=''; S.card.menu=null; S.card.sel=null; } S.tab=null; S.chatWith=null; S.compose=null; S.reactFor=null; render(); break;
   case 'home': S.view='home'; S.req=null; render(); break;
-  case 'csPhase': S.cs.phase=+v; render(); break;
-  case 'csTask': { S.cs.done[v]=!S.cs.done[v]; const [i]=v.split('-').map(Number); const ph=CS_CYCLE[i]; if(ph.tasks.every((_,j)=>S.cs.done[i+'-'+j])){ log(`CS 사이클 ${['①','②','③'][i]} ${ph.t} 끝`); if(i<2 && S.cs.phase===i){ S.cs.phase=i+1; toast(`다음: ${['①','②','③'][i+1]} ${CS_CYCLE[i+1].t}`); } } render(); break; }
+  case 'csPhase': S.cs.phase = (S.cs.phase===+v ? null : +v); S.cs.last=null; render(); break;   // 한 번 더 누르면 접힘
+  case 'csTask': { const was=!!S.cs.done[v]; S.cs.done[v]=!was; S.cs.last = was ? null : v; setTimeout(()=>{ if(S.cs.last===v) S.cs.last=null; },700); const [i]=v.split('-').map(Number); const ph=CS_CYCLE[i];
+    if(!was) log(`CS 사이클 ${['①','②','③'][i]} · ${ph.tasks[+v.split('-')[1]]} 했어요`);
+    if(!was && ph.tasks.every((_,j)=>S.cs.done[i+'-'+j])){
+      log(`CS 사이클 ${['①','②','③'][i]} ${ph.t} 끝`);
+      const nx=[0,1,2].find(x=>!CS_CYCLE[x].tasks.every((_,j)=>S.cs.done[x+'-'+j]));
+      if(nx==null){ S.cs.phase=null; setMsg(`CS 사이클 ${S.cs.round}바퀴 끝`,'ok',null,5000); }
+      else { S.cs.phase=nx; S.cs.last=null; toast(`다음: ${['①','②','③'][nx]} ${CS_CYCLE[nx].t}`); }
+    }
+    render(); break; }
+  case 'csNext': S.cs.done={}; S.cs.round++; S.cs.phase=0; S.cs.last=null; log(`CS 사이클 ${S.cs.round}바퀴째 시작`); toast(`${S.cs.round}바퀴째 시작`); render(); break;
   case 'csReqGo': { const q=S.cs.reqs.find(x=>x.id==v); if(!q) break; q.st='going'; unsig(x=>x.id==='req-'+q.id); S.chats[q.from].push({from:'me',type:'text',v:`${q.what} 가져갈게요`,t:NOW(),id:Date.now()}); sig('rep-'+q.from,'blue','slow',SIDE[q.from],'reply'); later(6000,()=>unsig('rep-'+q.from)); setMsg(`${q.from}에게 답함 · ${q.what} 가져가는 중`,'ok',null,5000); log(`${q.from}의 요청 "${q.what}" 받음 → ${q.from} 클립 파랑 느리게`); if(Peer.on) Peer.send({t:'reqGo',what:q.what}); render(); break; }
   case 'csReqDone': { const q=S.cs.reqs.find(x=>x.id==v); if(!q) break; S.cs.reqs=S.cs.reqs.filter(x=>x!==q); S.chats[q.from].push({from:'me',type:'text',v:`${q.what} 가져다 뒀어요`,t:NOW(),id:Date.now()}); log(`${q.from}에게 "${q.what}" 전달`); if(Peer.on) Peer.send({t:'reqDone',what:q.what}); reply(q.from,'',true,()=>{ S.chats[q.from].push({from:q.from,type:'emo',v:'고마워요',t:NOW(),id:Date.now()}); }); render(); break; }
   case 'land': S.land=!S.land; render(); break;
