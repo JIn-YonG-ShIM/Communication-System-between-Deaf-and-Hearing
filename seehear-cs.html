@@ -152,6 +152,11 @@ body.padapp #introBtn{display:inline-block;margin-left:auto}
 .intro button{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:999px;padding:13px 24px;min-height:48px;cursor:pointer;background:var(--page-btn);color:var(--page-ink)}
 .intro button.ivgo{background:#3f6b4c;color:#fff;padding-inline:30px}
 .intro button.ivskip{background:none;color:var(--page-sub);font-weight:600}
+.intro .ivpick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.intro .ivpick button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border-radius:20px;padding:16px 18px;min-height:76px;text-align:left;background:#3f6b4c;color:#fff}
+.intro .ivpick button+button{background:var(--page-ink);color:var(--page)}
+.intro .ivpick b{font-size:18px;font-weight:800}
+.intro .ivpick small{font-size:13.5px;font-weight:600;opacity:.85}
 .intro .ivart{aspect-ratio:1/1;border-radius:24px;background:#a9c4a6;display:grid;place-items:center;overflow:hidden}
 .intro .ivart svg{width:100%;height:100%;display:block}
 @media (max-width:760px){.intro .ivib{grid-template-columns:1fr;gap:18px;min-height:0}.intro .ivart{max-width:210px;margin:0 auto}.intro h3{font-size:24px}.intro .ivic{padding:24px 22px 20px}}
@@ -633,7 +638,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <h2>모자 클립 · Peter</h2>
       <div class="hat"><span>모자 챙 안쪽</span><div class="led" id="ledL">왼</div><div class="led" id="ledR">오</div></div>
       <div class="cliptxt" id="clipTxt">꺼짐</div>
-      <p class="note">Simon(CS)은 내 왼쪽, Lila(POS)는 내 오른쪽에 있다고 보고 보낸 사람 쪽 불이 켜져요. 위험·손님 호출·그룹 대화는 양쪽이 켜져요. 빛은 정해진 횟수만 깜박이고 꺼져요 (빠름 8번 · 느림 5번 · 켜짐 5초 · 위험 13번). 더 급한 신호가 오면 그 빛이 먼저 나오고, 밀린 신호는 멈춰 있다가 급한 신호가 해결된 뒤 남은 횟수만큼 이어서 깜박여요. 대답·확인을 요구하는 빛(빠름·켜짐)은 그 전에라도 내가 답하거나 확인하면 바로 꺼져요. 자세한 내용은 앱 화면에 남아요.</p>
+      <p class="note" id="hatNote">Simon(CS)은 내 왼쪽, Lila(POS)는 내 오른쪽에 있다고 보고 보낸 사람 쪽 불이 켜져요. 위험·손님 호출·그룹 대화는 양쪽이 켜져요. 빛은 정해진 횟수만 깜박이고 꺼져요 (빠름 8번 · 느림 5번 · 켜짐 5초 · 위험 13번). 더 급한 신호가 오면 그 빛이 먼저 나오고, 밀린 신호는 멈춰 있다가 급한 신호가 해결된 뒤 남은 횟수만큼 이어서 깜박여요. 대답·확인을 요구하는 빛(빠름·켜짐)은 그 전에라도 내가 답하거나 확인하면 바로 꺼져요. 자세한 내용은 앱 화면에 남아요.</p>
     </section>
     <section class="box" id="realbox">
       <h2 id="realH">실제 클립 연결</h2>
@@ -755,7 +760,18 @@ const SCHED = [{h:'06:00',r:'BAR'},{h:'07:00',r:'POS'},{h:'08:00',r:'BAR'},{h:'0
 /* 빌드 종류: BAR 앱 / CS 앱 (같은 소스, build.py 가 CS 을 바꿔 넣음). Peter 의 시간표는 같고, 장면 시각만 다름 */
 const APP_ROLE = 'CS';
 const IS_CS = APP_ROLE === 'CS';
+// CS 앱(아이패드)은 매니저 Simon, BAR 앱(휴대폰)은 농인 파트너 Peter.
+// 안쪽 데이터는 '나=Peter, 상대=Simon' 그대로 두고, CS 앱에서는 화면에 보이는 이름만 맞바꿈. '매니저 Simon'·'책임자 Simon'은 그대로.
+const NM  = IS_CS ? (t=>String(t).replace(/(매니저 |책임자 )?(Simon|Peter)/g,(m,p,n)=> p ? m : (n==='Simon'?'Peter':'Simon'))) : (t=>t);
+if(IS_CS){ [CALL_IMG.Simon, CALL_IMG.me] = [CALL_IMG.me, CALL_IMG.Simon]; [DEAF.Simon, DEAF.Peter] = [DEAF.Peter, DEAF.Simon]; }
+const NMH = IS_CS ? (h=>h.replace(/>([^<]+)</g,(m,t)=>'>'+NM(t)+'<')) : (h=>h);
 document.addEventListener('DOMContentLoaded', ()=>{
+  if(IS_CS){   // 조작판의 고정 글자도 이름을 맞바꿈 ('상황 만들기'는 보낼 곳에 따라 Target 이 따로 처리)
+    const hn=document.getElementById('hatNote'); if(hn) hn.firstChild.nodeValue = hn.firstChild.nodeValue.replace('Simon(CS)','Simon(BAR)');
+    const w=document.createTreeWalker(document.querySelector('.side'), NodeFilter.SHOW_TEXT); const ns=[]; while(w.nextNode()) ns.push(w.currentNode);
+    ns.forEach(n=>{ if(!n.parentElement.closest('#scenebox,#logbox')) n.nodeValue=NM(n.nodeValue); });
+  }
+  document.querySelectorAll('#scenebox .demo button[data-d], #scenebox .grp:not(#schedLab):not(#gSimon)').forEach(e=>{ e.dataset.o=e.textContent; });
   Target.paint(); Sched.paint();
   { const h=document.getElementById('realH'); if(h) h.textContent=`실제 클립 연결 (${APP_ROLE} 클립)`; }
   if(IS_CS) document.title='SeeHear CS';
@@ -795,8 +811,8 @@ function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
 function later(ms, fn){ timers.push(setTimeout(fn, ms)); }
 const auto = () => $('#autoRep').classList.contains('on');
 const hhmm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
-function log(t){ S.log.unshift([hhmm(S.min), t]); $('#log').innerHTML = S.log.slice(0,30).map(([a,b])=>`<li><b>${a}</b> ${esc(b)}</li>`).join(''); Remote.push(); }
-function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; P.appendChild(d); setTimeout(()=>d.remove(),1800); }
+function log(t){ S.log.unshift([hhmm(S.min), t]); $('#log').innerHTML = S.log.slice(0,30).map(([a,b])=>`<li><b>${a}</b> ${esc(NM(b))}</li>`).join(''); Remote.push(); }
+function toast(t){ t=NM(t); const d=document.createElement('div'); d.className='toast'; d.textContent=t; P.appendChild(d); setTimeout(()=>d.remove(),1800); }
 let msgTimer=null;
 function setMsg(text, kind='say', to=null, ttl=0){
   clearTimeout(msgTimer);
@@ -1155,7 +1171,7 @@ function tabBar(){
 function msgOnly(){
   // 메시지 띠만 바뀐 경우: 전체를 다시 그리지 않고 띠 내용·색만 교체
   const old=P.querySelector('.msg'); if(!old) return false;
-  const tmp=document.createElement('div'); tmp.innerHTML=msgBar(); const nw=tmp.firstElementChild;
+  const tmp=document.createElement('div'); tmp.innerHTML=NMH(msgBar()); const nw=tmp.firstElementChild;
   if(old.tagName!==nw.tagName){ old.replaceWith(nw); return true; }
   old.className=nw.className; old.innerHTML=nw.innerHTML; if(nw.dataset.a) old.dataset.a=nw.dataset.a; else delete old.dataset.a; old.style.cursor=nw.style.cursor;
   return true;
@@ -1185,7 +1201,7 @@ function render(){
   else if(sc==='goRole') h = goRoleView();
   else if(sc==='offwork') h = offView();
   else if(sc==='main') h = (S.land && !S.tab) ? landView() : mainView();
-  P.innerHTML = h;
+  P.innerHTML = NMH(h);
   const key=[sc,S.tab,S.view,S.set.page,S.chatWith,S.card.menu&&'cm:'+S.card.menu,S.sheet&&S.sheet.k,S.land,S.onBreak,S.call&&S.call.st,S.propIn,S.prop.edit].map(x=>x==='pers'&&!S.chatWith?null:x).join('|');
   const inCard=k=>/^main\|card\|/.test(k||'');
   P.classList.toggle('incard', inCard(key) && inCard(S.lastKey));
@@ -1265,7 +1281,7 @@ function pHomeView(){
   }
   else box = `<div class="cur"><span><small>매니저 Simon</small><b style="font-size:calc(22px * var(--fsz,1))">역할을 정하는 중</b></span></div>`;
   const brk = S.prop.rows.find(x=>x.b);
-  return `${chips('파트너', S.propDone&&brk?brk.h:'미정')}${msgBar()}
+  return `${chips(IS_CS?'매니저':'파트너', S.propDone&&brk?brk.h:'미정')}${msgBar()}
   <div class="pan" style="justify-content:${(S.propIn&&!waiting)||S.propDone?'flex-start':'center'};background:var(--pan)">
     <b style="font-size:calc(17px * var(--fsz,1))">Peter · 출근</b>
     ${box}
@@ -1282,7 +1298,7 @@ function proposalView(){
   const rows = S.prop.rows.map((r,i)=> (e || S.prop.open===i)
     ? `<div class="tr"><span class="h">${r.h}</span>${opts(r,i)}</div>`
     : `<div class="tr"><span class="h">${r.h}</span><button class="w${r.b?' brk':''}${orig[i]&&(r.r!==orig[i].r||!!r.b!==!!orig[i].b)?' chg':''}" data-a="propOpen" data-i="${i}">${r.b?'휴게':r.r}</button><button class="e" data-a="propOpen" data-i="${i}" aria-label="${r.h} 고치기">✎</button></div>`).join('');
-  return `${chips('파트너','미정')}
+  return `${chips(IS_CS?'매니저':'파트너','미정')}
   <div class="full" style="padding-top:140px">
     <p class="ttl">${e?'바꾸고 싶은 시간 고치기':changed?'바꾼 시간표 · Simon에게 보내기':'Simon 매니저의 제안'}</p>
     
@@ -1307,7 +1323,7 @@ function roleCard(){
 }
 function goRoleView(){
   const brk = S.prop.rows.find(x=>x.b);
-  return `${chips('파트너', brk?brk.h:'미정')}<div class="full" style="padding-top:140px">${roleCard()}</div>`;
+  return `${chips(IS_CS?'매니저':'파트너', brk?brk.h:'미정')}<div class="full" style="padding-top:140px">${roleCard()}</div>`;
 }
 
 /* 메인 BAR */
@@ -1677,7 +1693,7 @@ function setView(){
   if(p==='me'){
     const h=Math.floor(S.min/60);
     const rows=S.prop.rows;
-    return `${head('내 정보')}<div class="prof"><i>P</i><span><b>Peter</b><small>파트너 · 사진과 이름 바꾸기 ›</small></span></div>
+    return `${head('내 정보')}<div class="prof"><i>${IS_CS?'S':'P'}</i><span><b>Peter</b><small>${IS_CS?'매니저':'파트너'} · 사진과 이름 바꾸기 ›</small></span></div>
     <span class="sg">오늘 근무</span><div class="sl"><div class="si">역할<span>${RC.role} · 매니저 배정</span></div><div class="si">근무 시간<span>06:00 – 11:00</span></div><div class="si">휴식<span>${brkLabel()} – ${String(+brkLabel().slice(0,2)+1).padStart(2,'0')}:00</span></div></div>
     <div class="sl" style="padding:10px"><b style="font-size:calc(13px * var(--fsz,1))">시간표</b><div class="tt" style="margin-top:6px">${rows.map(r=>{const hh=+r.h.slice(0,2);return `<div class="${hh===h?'now':r.b?'brk':''}">${hh===h?'지금 '+h+'시':r.h}<b>${r.b?'휴게':r.r}</b></div>`}).join('')}</div></div>
     <span class="sg">계정</span><div class="sl"><div class="si">매장<span>○○점</span></div><div class="si">직급 바꾸기<span>매니저에게 요청 ›</span></div><div class="si">연결된 클립<span>클립 1개 ›</span></div></div>
@@ -1796,7 +1812,7 @@ function swipe(el){
 
 /* ───── 시간 흐름 ───── */
 setInterval(()=>{ if(!S) return; if(S.screen==='main'){ S.min++; const sb=P.querySelector('.sb span'); if(sb) sb.textContent=hhmm(S.min); } },60000);
-setInterval(()=>{ if(S && S.tab==='alarm' && !S.sheet && S.screen==='main') { const sc=$('#pan').scrollTop; $('#pan').innerHTML=alarmView(); $('#pan').scrollTop=sc; } if(S&&S.call&&S.call.st==='on'){ const e=$('#ctime'); if(e){const s=Math.floor((Date.now()-S.call.t0)/1000); e.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;} } },1000);
+setInterval(()=>{ if(S && S.tab==='alarm' && !S.sheet && S.screen==='main') { const sc=$('#pan').scrollTop; $('#pan').innerHTML=NMH(alarmView()); $('#pan').scrollTop=sc; } if(S&&S.call&&S.call.st==='on'){ const e=$('#ctime'); if(e){const s=Math.floor((Date.now()-S.call.t0)/1000); e.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;} } },1000);
 
 /* ───── 동작 ───── */
 const NOW = () => hhmm(S.min);
@@ -1813,7 +1829,7 @@ function act(a, d={}){
   const v=d.v, i=d.i!=null?+d.i:null;
   switch(a){
   case 'fill': $('#lid').value='2020212028'; $('#lpw').value='seehear'; $('#lgo').disabled=false; break;
-  case 'login': S.screen = IS_PAD() ? 'clipLink' : 'teamLink'; S.set.teamDraft=null; log('Peter 로그인'); render(); break;   // 휴대폰은 아이패드와 연결하는 화면부터
+  case 'login': S.screen = (IS_PAD() || Peer.on) ? 'clipLink' : 'teamLink'; S.set.teamDraft=null; log('Peter 로그인'); if(!IS_PAD() && Peer.on) log('아이패드 앱과 이미 연결돼 있어 연결 화면을 건너뜀'); render(); break;   // 휴대폰은 아이패드와 연결하는 화면부터
   case 'teamNext': S.screen='clipLink'; S.set.teamDraft=null; log(Peer.on?'아이패드 앱과 연결하고 시작':'아이패드 연결 없이 시작'); render(); break;
   case 'clipBle': Clip.ble(); break;
   case 'clipUsb': Clip.usb(); break;
@@ -2197,14 +2213,17 @@ const Target = (()=>{
       if(b.dataset.t==='self') b.textContent=meName; if(b.dataset.t==='peer') b.textContent=`휴대폰 (${OTHER_ROLE})`; });
     // 자리(BAR/CS)마다 다른 상황 묶음: 받는 기기의 것만 보이게. '둘 다'일 때는 둘 다 보이고 각자 주인에게 감
     document.querySelectorAll('[data-role]').forEach(e=>{ const mine=e.dataset.role===APP_ROLE; e.classList.toggle('roff', cur==='self' ? !mine : cur==='peer' ? mine : false); });
-    const g=document.getElementById('gSimon'); if(g) g.textContent = cur==='both' ? '동료 · Simon (내 왼쪽)' : `동료 · Simon (${cur==='peer'?APP_ROLE:OTHER_ROLE} · 내 왼쪽)`;
+    // 이름은 '받는 기기'에서 보이는 대로: 휴대폰으로 보낼 때는 휴대폰이 보는 이름 그대로, 아니면 이 기기가 보는 이름
+    const view = (el,t) => (cur==='peer' && !el.closest('[data-role]')) ? t : NM(t);
+    document.querySelectorAll('#scenebox [data-o]').forEach(e=>{ e.textContent = view(e, e.dataset.o); });
+    const g=document.getElementById('gSimon'); if(g) g.textContent = view(g, cur==='both' ? '동료 · Simon (내 왼쪽)' : `동료 · Simon (${cur==='peer'?APP_ROLE:OTHER_ROLE} · 내 왼쪽)`);
     const n=document.getElementById('tgtnote'); if(n){ const need = cur!=='self'; n.hidden=!need; n.classList.toggle('warn', need && !Peer.on);
       n.textContent = !need ? '' : !Peer.on ? `휴대폰과 아직 이어지지 않았어요. 위쪽 ‘두 폰 연결’에 같은 팀 코드를 넣어 주세요.` : cur==='peer' ? `누르는 상황이 ${OTHER_ROLE} 휴대폰에서 일어나요.` : `누르는 상황이 두 기기에서 함께 일어나요. 자리마다 다른 상황은 그 자리의 기기로 가요.`; }
   }
   function set(t){ cur=t; paint(); }
   // 단추 하나를 눌렀을 때: 어디에서 실행할지 정함
   function run(btn){
-    const k=btn.dataset.d, label=btn.textContent.trim(), own=btn.closest('[data-role]');
+    const k=btn.dataset.d, label=(btn.dataset.o||btn.textContent).trim(), own=btn.closest('[data-role]');
     let here = cur!=='peer', there = cur!=='self';
     if(own){ const mine = own.dataset.role===APP_ROLE; here = mine; there = !mine; }   // 자리 전용 상황은 그 자리의 기기로만
     if(there){
@@ -2215,9 +2234,9 @@ const Target = (()=>{
   }
   document.addEventListener('click', e=>{ const b=e.target.closest('#tgt [data-t]'); if(b) set(b.dataset.t); });
   setInterval(()=>{ if(cur!=='self') paint(); }, 3000);   // 연결 상태가 바뀌면 안내 문구도 바뀌게
-  return {paint, run, get cur(){return cur;}};
+  return {paint, run, set, get cur(){return cur;}};
 })();
-function alert2(t){ const n=$('#cnote'); n.hidden=false; n.textContent=t; setTimeout(()=>{ if(n.textContent===t) n.hidden=true; },2500); }
+function alert2(t){ t=NM(t); const n=$('#cnote'); n.hidden=false; n.textContent=t; setTimeout(()=>{ if(n.textContent===t) n.hidden=true; },2500); }
 $('#autoRep').addEventListener('click', e=>{ const on=e.currentTarget.classList.toggle('on'); e.currentTarget.setAttribute('aria-checked',on); if(Remote.role==='remote') Remote.send({t:'auto',on}); });
 
 /* ───── 기기 역할 ───── */
@@ -2291,27 +2310,49 @@ const Intro = (()=>{
     // 1. 모자 챙 안쪽 클립 — 양쪽 빛
     `<svg viewBox="0 0 250 250"><path d="M35 165a90 78 0 0 1 180 0v8H35z" fill="${G}"/><circle cx="78" cy="150" r="15" fill="#ffd60a"/><circle cx="78" cy="150" r="27" fill="#ffd60a" opacity=".28"/><circle cx="172" cy="150" r="15" fill="${D}" opacity=".45"/><text x="125" y="118" text-anchor="middle" font-size="13" font-weight="700" fill="${W}" opacity=".85">모자 챙 안쪽</text><text x="125" y="208" text-anchor="middle" font-size="14" font-weight="800" fill="${D}">부르면, 빛이 켜져요</text></svg>`,
     // 2. 아이패드: 왼쪽 화면 + 오른쪽 조작판
-    `<svg viewBox="0 0 250 250"><rect x="22" y="48" width="206" height="154" rx="16" fill="${D}"/><rect x="34" y="60" width="62" height="130" rx="10" fill="${W}"/><rect x="42" y="74" width="46" height="9" rx="4.5" fill="${G}"/><rect x="42" y="90" width="46" height="28" rx="6" fill="${S1}"/><rect x="42" y="124" width="46" height="28" rx="6" fill="${S1}"/><rect x="106" y="60" width="110" height="60" rx="10" fill="#f1f4ef"/><rect x="106" y="130" width="110" height="60" rx="10" fill="#f1f4ef"/><rect x="116" y="142" width="42" height="14" rx="7" fill="${G}"/><rect x="164" y="142" width="42" height="14" rx="7" fill="#c9d3c7"/><rect x="116" y="164" width="42" height="14" rx="7" fill="#c9d3c7"/><rect x="164" y="164" width="42" height="14" rx="7" fill="#c9d3c7"/><path d="M122 104a39 30 0 0 1 78 0z" fill="${G}"/><circle cx="65" cy="34" r="12" fill="${W}"/><text x="65" y="39" text-anchor="middle" font-size="14" font-weight="800" fill="${D}">1</text><circle cx="161" cy="34" r="12" fill="${W}"/><text x="161" y="39" text-anchor="middle" font-size="14" font-weight="800" fill="${D}">2</text><text x="65" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="${D}">Peter의 앱</text><text x="161" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="${D}">상황 만들기</text></svg>`,
+    `<svg viewBox="0 0 250 250"><rect x="22" y="48" width="206" height="154" rx="16" fill="${D}"/><rect x="34" y="60" width="62" height="130" rx="10" fill="${W}"/><rect x="42" y="74" width="46" height="9" rx="4.5" fill="${G}"/><rect x="42" y="90" width="46" height="28" rx="6" fill="${S1}"/><rect x="42" y="124" width="46" height="28" rx="6" fill="${S1}"/><rect x="106" y="60" width="110" height="60" rx="10" fill="#f1f4ef"/><rect x="106" y="130" width="110" height="60" rx="10" fill="#f1f4ef"/><rect x="116" y="142" width="42" height="14" rx="7" fill="${G}"/><rect x="164" y="142" width="42" height="14" rx="7" fill="#c9d3c7"/><rect x="116" y="164" width="42" height="14" rx="7" fill="#c9d3c7"/><rect x="164" y="164" width="42" height="14" rx="7" fill="#c9d3c7"/><path d="M122 104a39 30 0 0 1 78 0z" fill="${G}"/><circle cx="65" cy="34" r="12" fill="${W}"/><text x="65" y="39" text-anchor="middle" font-size="14" font-weight="800" fill="${D}">1</text><circle cx="161" cy="34" r="12" fill="${W}"/><text x="161" y="39" text-anchor="middle" font-size="14" font-weight="800" fill="${D}">2</text><text x="65" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="${D}">${IS_CS?'Simon':'Peter'}의 앱</text><text x="161" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="${D}">상황 만들기</text></svg>`,
     // 3. 휴대폰 → 아이패드 · 클립
     `<svg viewBox="0 0 250 250"><rect x="30" y="40" width="82" height="170" rx="16" fill="${D}"/><rect x="38" y="50" width="66" height="150" rx="9" fill="${W}"/><rect x="46" y="66" width="50" height="22" rx="11" fill="${G}"/><rect x="46" y="96" width="50" height="22" rx="11" fill="${S1}"/><rect x="46" y="150" width="50" height="26" rx="13" fill="#e5463b"/><text x="71" y="81" text-anchor="middle" font-size="9" font-weight="800" fill="${W}">재료 요청</text><text x="71" y="111" text-anchor="middle" font-size="9" font-weight="800" fill="${D}">지원 요청</text><text x="71" y="167" text-anchor="middle" font-size="9" font-weight="800" fill="${W}">위험 알리기</text><path d="M124 125h44m-12-11 12 11-12 11" fill="none" stroke="${D}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M180 140a26 22 0 0 1 52 0v4h-52z" fill="${G}"/><circle cx="194" cy="134" r="6" fill="#2f80ff"/><circle cx="194" cy="134" r="12" fill="#2f80ff" opacity=".3"/><circle cx="218" cy="134" r="5" fill="${D}" opacity=".45"/><text x="206" y="166" text-anchor="middle" font-size="11" font-weight="800" fill="${D}">${me} 클립</text></svg>`,
     // 4. 빛 읽는 법
     `<svg viewBox="0 0 250 250"><g><path d="M30 78a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="71" r="8" fill="#2f80ff"/><circle cx="47" cy="71" r="14" fill="#2f80ff" opacity=".3"/><circle cx="81" cy="71" r="6" fill="${D}" opacity=".4"/><text x="112" y="76" font-size="13" font-weight="800" fill="${D}">왼쪽 동료가 불러요</text></g><g><path d="M30 138a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="131" r="6" fill="${D}" opacity=".4"/><circle cx="81" cy="131" r="8" fill="#34c759"/><circle cx="81" cy="131" r="14" fill="#34c759" opacity=".3"/><text x="112" y="136" font-size="13" font-weight="800" fill="${D}">오른쪽 동료가 불러요</text></g><g><path d="M30 198a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="191" r="8" fill="#ff3b30"/><circle cx="47" cy="191" r="14" fill="#ff3b30" opacity=".3"/><circle cx="81" cy="191" r="8" fill="#ff3b30"/><circle cx="81" cy="191" r="14" fill="#ff3b30" opacity=".3"/><text x="112" y="196" font-size="13" font-weight="800" fill="${D}">양쪽 빨강 · 위험</text></g></svg>`
   ];
-  const pages = [
-    {k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p class="ivcta">이 아이패드와 앞의 휴대폰, 클립으로 직접 체험해보세요.</p>`},
-    {k:`이 아이패드 · ${me} 자리`, h:'농인 파트너 Peter가 되어 보세요', b:`<ol><li><i>1</i><span><b>왼쪽 화면</b>은 Peter의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’으로 시작해요.</span></li><li><i>2</i><span><b>오른쪽 ‘상황 만들기’</b> 버튼을 누르면 손님 호출, 동료의 메시지, 위험 알림이 일어나요.</span></li><li><i>3</i><span>그때마다 <b>모자 그림과 실제 클립</b>에 어떤 빛이 켜지는지 보세요.</span></li>${IS_CS?`<li><i>4</i><span>들어온 요청은 왼쪽 화면에서 <b>‘가져갈게요’</b>로 대답할 수 있어요.</span></li>`:''}</ol>`},
-    {k:`앞의 휴대폰 · ${other} 자리`, h:'함께 일하는 동료가 되어 보세요', b:`<ul><li><i class="d" style="background:#3f6b4c"></i><span><b>재료 요청 · 지원 요청</b>을 보내면 이 아이패드 화면과 ${me} 클립에 도착해요.</span></li><li><i class="d" style="background:#e5463b"></i><span><b>위험 알리기</b>를 누르면 모든 클립이 빨강으로 빠르게 깜박여요.</span></li><li><i class="d" style="background:#2f80ff"></i><span><b>메시지</b>를 보내면 받는 사람의 클립에 불이 켜져요.</span></li></ul><p class="ivnote">위쪽 ‘두 폰 연결’에 초록 점이 켜져 있으면 휴대폰과 이어진 상태예요.</p>`},
-    {k:'클립의 빛 읽는 법', h:'어느 쪽에서, 얼마나 급한지', b:`<ul><li><i class="d" style="background:#2f80ff"></i><span><b>불이 켜진 쪽</b>이 부르는 동료가 있는 방향이에요.</span></li><li><i class="d" style="background:#ffd60a"></i><span><b>양쪽</b>이 켜지면 손님 호출, 그룹 대화, 위험처럼 모두가 알아야 하는 일이에요.</span></li><li><i class="d" style="background:#ff3b30"></i><span><b>빨강 · 빠르게</b>는 위험이에요. 다른 빛보다 먼저 나와요.</span></li></ul><p class="ivnote">깜박임이 끝나도 내용은 앱의 Alarm에 남아 있어요.</p>`}
-  ];
+  const padMe = IS_CS ? 'Simon' : 'Peter', phMe = IS_CS ? 'Peter' : 'Simon';
+  const padWho = IS_CS ? '매니저 Simon' : '농인 파트너 Peter', phWho = IS_CS ? '농인 파트너 Peter' : '매니저 Simon';
+  const li = (n,t) => `<li><i>${n}</i><span>${t}</span></li>`;
+  const dot = (c,t) => `<li><i class="d" style="background:${c}"></i><span>${t}</span></li>`;
+  const P0 = {a:0, k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p class="ivcta">아이패드와 앞의 휴대폰, 클립으로 직접 체험해보세요.</p>
+    <div class="ivpick"><button data-in="solo"><b>혼자 체험하기</b><small>아이패드 하나로</small></button><button data-in="duo"><b>둘이서 체험하기</b><small>아이패드와 아이폰으로</small></button></div>`};
+  const SOLO = {a:1, k:'혼자 체험하기 · 아이패드', h:'아이패드 하나로 체험해요', b:`<ol>
+    ${li(1,`<b>왼쪽 화면</b>은 ${me} 자리에서 일하는 <b>${padWho}</b>의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’으로 시작해요.`)}
+    ${li(2,`<b>오른쪽 ‘상황 만들기’</b>의 단추를 눌러 보세요. 손님 호출, 동료 ${phMe}의 메시지와 요청, 위험 알림이 일어나요.`)}
+    ${li(3,`그때마다 <b>모자 그림과 실제 클립</b>에 어떤 빛이 켜지는지 보세요.`)}
+    ${li(4,`왼쪽 화면에서 요청에 <b>‘가져갈게요’</b>로 답하고, ${me} 사이클의 할 일을 눌러 체크해 보세요.`)}</ol><p class="ivnote">혼자일 때는 아이폰을 쓰지 않아도 돼요.</p>`};
+  const DUO1 = {a:1, k:'둘이서 체험하기 · 아이패드', h:`한 분은 아이패드에서 ${padWho}`, b:`<ol>
+    ${li(1,`왼쪽 화면에서 ‘시연용 사번 넣기’ → ‘로그인’으로 <b>${me} 화면</b>까지 들어가요.`)}
+    ${li(2,`아이폰이 ‘역할을 정하는 중’에서 기다리면 오른쪽 <b>‘시간표 보내기’</b>가 깜박여요. 눌러서 시간표를 보내 주세요.`)}
+    ${li(3,`아이폰에서 요청이 오면 왼쪽 화면에서 <b>‘가져갈게요’</b>로 답해요.`)}
+    ${li(4,`‘상황 만들기’ 맨 위를 <b>‘휴대폰 (${other})’</b>로 바꾸면 아이폰 쪽에 주문·손님 호출 같은 상황을 보낼 수 있어요.`)}</ol>`};
+  const DUO2 = {a:2, k:'둘이서 체험하기 · 아이폰', h:`다른 한 분은 아이폰에서 ${phWho}`, b:`<ol>
+    ${li(1,`‘로그인’ → ‘파트너’를 고르고, 아이패드가 보낸 <b>시간표</b>를 받아 ${other} 화면으로 들어가요.`)}
+    ${li(2,`<b>재료 요청 · 지원 요청</b>을 보내면 아이패드 화면과 ${me} 클립에 도착해요.`)}
+    ${li(3,`<b>위험 알리기</b>를 누르면 모든 클립이 빨강으로 빠르게 깜박여요.`)}
+    ${li(4,`<b>Pers</b>에서 ${padMe}에게 메시지를 보내면 아이패드와 클립에 도착해요.`)}</ol><p class="ivnote">아이패드 위쪽 ‘두 폰 연결’에 초록 점이 켜져 있으면 아이폰과 이어진 상태예요.</p>`};
+  const LIGHT = {a:3, k:'클립의 빛 읽는 법', h:'어느 쪽에서, 얼마나 급한지', b:`<ul>
+    ${dot('#2f80ff',`<b>불이 켜진 쪽</b>이 부르는 동료가 있는 방향이에요.`)}
+    ${dot('#ffd60a',`<b>양쪽</b>이 켜지면 손님 호출, 그룹 대화, 위험처럼 모두가 알아야 하는 일이에요.`)}
+    ${dot('#ff3b30',`<b>빨강 · 빠르게</b>는 위험이에요. 다른 빛보다 먼저 나와요.`)}</ul><p class="ivnote">깜박임이 끝나도 내용은 앱의 Alarm에 남아 있어요.</p>`};
+  let mode=null;
+  const seq = () => mode==='solo' ? [P0,SOLO,LIGHT] : mode==='duo' ? [P0,DUO1,DUO2,LIGHT] : [P0];
   function paint(){
-    const p = pages[i], last = i===pages.length-1;
-    el.innerHTML = `<div class="ivic" role="dialog" aria-modal="true" aria-label="체험 안내"><div class="ivib"><div class="ivart">${art[i]}</div><div><p class="ivik">${p.k}</p><h3>${p.h}</h3>${p.b}</div></div>
-      <div class="ivif"><button class="ivskip" data-in="close">${last?'':'건너뛰기'}</button><span class="ivdots">${pages.map((_,n)=>`<span class="${n===i?'on':''}"></span>`).join('')}</span>${i?`<button data-in="prev">이전</button>`:''}<button class="ivgo" data-in="${last?'close':'next'}">${last?'체험 시작하기':'다음'}</button></div></div>`;
+    const pages=seq(), p = pages[i], last = mode && i===pages.length-1;
+    el.innerHTML = `<div class="ivic" role="dialog" aria-modal="true" aria-label="체험 안내"><div class="ivib"><div class="ivart">${art[p.a]}</div><div><p class="ivik">${p.k}</p><h3>${p.h}</h3>${p.b}</div></div>
+      <div class="ivif"><button class="ivskip" data-in="close">${last?'':'건너뛰기'}</button><span class="ivdots">${(mode?pages:[P0,0,0]).map((_,n)=>`<span class="${n===i?'on':''}"></span>`).join('')}</span>${i?`<button data-in="prev">이전</button>`:''}${i?`<button class="ivgo" data-in="${last?'close':'next'}">${last?'체험 시작하기':'다음'}</button>`:''}</div></div>`;
   }
-  el.addEventListener('click', e=>{ const b=e.target.closest('[data-in]'); if(!b) return;
-    if(b.dataset.in==='next') i=Math.min(i+1,pages.length-1); else if(b.dataset.in==='prev') i=Math.max(i-1,0); else return close();
+  el.addEventListener('click', e=>{ const b=e.target.closest('[data-in]'); if(!b) return; const k=b.dataset.in;
+    if(k==='solo'||k==='duo'){ mode=k; i=1; if(k==='solo' && typeof Target!=='undefined') Target.set('self'); }
+    else if(k==='next') i=Math.min(i+1,seq().length-1); else if(k==='prev'){ i=Math.max(i-1,0); if(i===0) mode=null; } else return close();
     paint(); });
-  function open(){ i=0; paint(); el.hidden=false; }
+  function open(){ i=0; mode=null; paint(); el.hidden=false; }
   function close(){ el.hidden=true; el.innerHTML=''; }
   document.getElementById('introBtn').addEventListener('click', open);
   return {open, close};
