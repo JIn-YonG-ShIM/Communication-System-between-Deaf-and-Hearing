@@ -771,7 +771,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <div class="scin" id="scin">
       <div id="schedGrp">
         <div class="grp" id="schedLab">매니저 Simon 역할 · 아이폰에게</div>
-        <div class="demo"><button class="span2" id="schedBtn" disabled>시간표 보내기</button></div>
+        <div class="demo"><button class="span2" id="schedBtn" disabled>Peter에게 제안 보내기</button></div>
         <p class="tgtnote" id="schedNote"></p>
       </div>
       <div class="grp" data-role="BAR">주문 · POS에서</div>
@@ -1153,7 +1153,9 @@ const Remote = (() => {
    같은 팀 코드를 넣은 두 앱이 중계소(MQTT)로 서로 메시지를 주고받아요. 상대는 양쪽 모두 'Simon'(내 왼쪽)으로 보여요.
    연결돼 있는 동안은 Simon 의 자동 대답을 끄고, 진짜 상대 폰의 행동이 대신 들어와요. */
 const Peer = (() => {
-  const BROKER = 'wss://broker.emqx.io:8084/mqtt';
+  // 공개 중계소 여러 곳에 동시에 붙음: 하나가 느리거나 막혀도 다른 곳으로 오감 (같은 글은 id 로 한 번만 처리)
+  const BROKERS = ['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+  let clients=[], fastUntil=0, lastPong=0;
   const OTHER = 'Simon';
   let code=null, client=null, bc=null, peerSeen=0, seen=new Set(), pingIv=null;
   const $m = s => document.querySelector(s);
@@ -1167,28 +1169,32 @@ const Peer = (() => {
     c=(c||'').trim().toUpperCase(); if(c.length!==4){ toast('팀 코드 4글자를 넣어 주세요'); return; }
     stop(); code=c; try{ localStorage.setItem('seehear-team',c); }catch(e){}
     try{ bc=new BroadcastChannel('seehear-team-'+c); bc.onmessage=e=>recv(e.data); }catch(e){}
-    if(window.mqtt){
-      client=mqtt.connect(BROKER,{clientId:'sh-team-'+APP_ROLE+'-'+Math.random().toString(16).slice(2,8),keepalive:30,reconnectPeriod:2000});
-      client.on('connect',()=>{ client.subscribe(topic()); send({t:'ping'}); ui(); });
-      client.on('message',(t,buf)=>{ let m; try{ m=JSON.parse(buf.toString()); }catch(e){ return; } recv(m); });
-      client.on('error',()=>ui());
-    }
-    pingIv=setInterval(()=>{ send({t:'ping'}); ui(); },5000);
+    const open = () => { if(!window.mqtt || code!==c) return;
+      clients = BROKERS.map(url=>{ let cl; try{ cl=mqtt.connect(url,{clientId:'sh-team-'+APP_ROLE+'-'+Math.random().toString(16).slice(2,8),keepalive:30,reconnectPeriod:1500,connectTimeout:8000}); }catch(e){ return null; }
+        cl.on('connect',()=>{ cl.subscribe(topic()); send({t:'ping'}); ui(); });
+        cl.on('message',(t,buf)=>{ let m; try{ m=JSON.parse(buf.toString()); }catch(e){ return; } recv(m); });
+        cl.on('error',()=>ui()); return cl; }).filter(Boolean);
+      client = { get connected(){ return clients.some(x=>x.connected); } }; ui(); };
+    if(window.mqtt) open();
+    else { const sc=document.createElement('script'); sc.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'; sc.onload=open; document.head.appendChild(sc); }   // 처음 주소에서 못 받았을 때 다른 곳에서 다시 받음
+    fastUntil=Date.now()+40000;
+    let tick=0; pingIv=setInterval(()=>{ tick++; if(Date.now()<fastUntil || !live() || tick%3===0) send({t:'ping'}); ui(); },1700);   // 처음 40초와 끊겼을 때는 1.7초마다, 평소에는 5초마다
     log(`두 폰 연결 시작 · 팀 코드 ${c}`); ui();
   }
-  function stop(){ if(client){ try{client.end(true);}catch(e){} client=null; } if(bc){ try{bc.close();}catch(e){} bc=null; } clearInterval(pingIv); code=null; peerSeen=0; ui(); }
+  function stop(){ clients.forEach(x=>{ try{x.end(true);}catch(e){} }); clients=[]; client=null; if(bc){ try{bc.close();}catch(e){} bc=null; } clearInterval(pingIv); code=null; peerSeen=0; ui(); }
   function send(m){
     if(!code) return false;
     m={...m, role:APP_ROLE, w:waitingSched()?1:0, id:m.id||(Date.now()+'-'+Math.random().toString(16).slice(2,6))};
     try{ if(bc) bc.postMessage(m); }catch(e){}
-    try{ if(client&&client.connected) client.publish(topic(), JSON.stringify(m)); }catch(e){}
+    { const js=JSON.stringify(m); clients.forEach(x=>{ try{ if(x.connected) x.publish(topic(), js); }catch(e){} }); }
     return true;
   }
   const live = () => !!code && peerSeen && Date.now()-peerSeen<15000;
   function recv(m){
     if(!m || m.role===APP_ROLE || !m.id || seen.has(m.id)) return;
     seen.add(m.id); if(seen.size>500) seen=new Set([...seen].slice(-200));
-    peerSeen=Date.now(); ui();
+    const wasLive = live(); peerSeen=Date.now(); ui();
+    if(!wasLive && Date.now()-lastPong>1000){ lastPong=Date.now(); send({t:'ping'}); }   // 상대를 처음 봤으면 바로 대답 → 양쪽이 동시에 '연결됨'
     const n=OTHER, roleOf=m.role;
     if('w' in m) Sched.peerWait(!!m.w);
     switch(m.t){
@@ -2413,7 +2419,8 @@ const Sched = (()=>{
   const el = id => document.getElementById(id);
   function paint(){
     const b=el('schedBtn'), n=el('schedNote'), g=el('schedGrp'); if(!b) return;
-    if(g) g.hidden = true;                         // 시간표는 매니저 화면에서 보내므로 조작판에서는 숨김
+    let toPhone=false; try{ toPhone = Target.cur==='peer'; }catch(e){}
+    if(g) g.hidden = !(IS_CS && toPhone);          // 보낼 곳을 '아이폰 (BAR)'로 골랐을 때만 (아이폰으로 혼자 체험하는 사람에게 시간표를 보내는 단추)
     const ready = Peer.on && wait;
     b.disabled = !ready; b.classList.toggle('blink', ready);
     if(n) n.textContent = !Peer.on ? '아이폰과 연결되면 쓸 수 있어요.' : ready ? '아이폰이 ‘역할을 정하는 중’ 화면에서 기다리고 있어요. 눌러서 시간표를 보내 주세요.' : '아이폰이 ‘역할을 정하는 중’ 화면에 오면 단추가 깜박여요.';
@@ -2455,6 +2462,7 @@ const Target = (()=>{
     const view = (el,t) => (cur==='peer' && !el.closest('[data-role]')) ? t : NM(t);
     document.querySelectorAll('#scenebox [data-o]').forEach(e=>{ e.textContent = view(e, e.dataset.o); });
     const g=document.getElementById('gSimon'); if(g) g.textContent = view(g, cur==='both' ? '동료 · Simon (내 왼쪽)' : `동료 · Simon (${cur==='peer'?APP_ROLE:OTHER_ROLE} · 내 왼쪽)`);
+    try{ Sched.paint(); }catch(e){}
     const n=document.getElementById('tgtnote'); if(n){ const need = cur!=='self'; n.hidden=!need; n.classList.toggle('warn', need && !Peer.on);
       n.textContent = !need ? '' : !Peer.on ? `아이폰과 아직 이어지지 않았어요. 위쪽 ‘두 폰 연결’에 같은 팀 코드를 넣어 주세요.` : cur==='peer' ? `누르는 상황이 ${OTHER_ROLE} 아이폰에서 일어나요.` : `누르는 상황이 두 기기에서 함께 일어나요. 자리마다 다른 상황은 그 자리의 기기로 가요.`; }
   }
