@@ -28,9 +28,12 @@ button:disabled{cursor:default}
 .modebar .seg button.on{background:var(--page-ink);color:var(--page)}
 .modebar code{font-family:ui-monospace,Menlo,monospace;background:var(--page-btn);border-radius:6px;padding:2px 8px;font-size:calc(13px * var(--fsz,1));letter-spacing:.1em}
 .modebar input{width:84px;font:inherit;font-family:ui-monospace,Menlo,monospace;letter-spacing:.15em;text-transform:uppercase;text-align:center;border:1px solid var(--page-line);border-radius:8px;padding:5px;background:var(--page-card);color:var(--page-ink)}
-.modebar .st{display:inline-flex;align-items:center;gap:5px}
-.modebar .st::before{content:"";width:8px;height:8px;border-radius:50%;background:#b9c2bb}
-.modebar .st.on::before{background:#1f9a68}
+.modebar #teamBox{display:inline-flex;align-items:center;gap:8px}
+.modebar .st{display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 12px;border-radius:999px;background:var(--page-btn);font-weight:700;color:var(--page-sub);margin-right:10px;white-space:nowrap}
+.modebar .st::before{content:"";width:10px;height:10px;border-radius:50%;background:#aab3ac;flex:none}
+.modebar .st.on{color:var(--page-ink)}
+.modebar .st.on::before{background:#22a45d;box-shadow:0 0 0 3px rgba(34,164,93,.2)}
+.modebar .tlab{color:var(--page-sub);font-weight:600}
 body[data-mode="phone"] .side,body[data-mode="remote"] .stage{display:none}
 body[data-mode="remote"] .side{width:min(520px,100%)}
 @media (min-width:760px) and (max-width:900px){ body[data-mode="both"] .side{width:340px} }
@@ -173,8 +176,16 @@ body.padapp .sidecols{display:block;column-width:300px;column-gap:12px}
 body.padapp .sidecols>.box{break-inside:avoid;margin:0 0 12px}
 /* 아이패드: '지나간 일'은 숨기고, 그 자리(오른쪽 칸)에 '상황 만들기' */
 body.padapp #logbox{display:none}
-body.padapp.cols2 .sidecols{column-count:2;column-width:auto}
-body.padapp.cols2 #scenebox{break-before:column;break-inside:auto}
+.scin{display:contents}
+/* 넓은 아이패드: 왼쪽 칸(클립 · 연결 · 처음부터)과 오른쪽 '상황 만들기'. 상황 만들기는 흰 상자 안에서만 위아래로 스크롤 */
+body.padapp.cols2 .sidecols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+body.padapp.cols2 .sidecols>.box{margin:0;grid-column:1}
+body.padapp.cols2 #scenebox{grid-column:2;grid-row:1 / span 6;position:sticky;top:0;height:var(--sideH,100%);display:flex;flex-direction:column;overflow:hidden}
+body.padapp.cols2 #scenebox>h2,body.padapp.cols2 #scenebox>.tgt,body.padapp.cols2 #scenebox>.tgtnote{flex:none}
+body.padapp.cols2 .scin{display:block;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:0 -10px -6px 0;padding:0 10px 6px 0;scrollbar-width:thin;scrollbar-color:var(--page-line) transparent}
+body.padapp.cols2 .scin::-webkit-scrollbar{width:6px}
+body.padapp.cols2 .scin::-webkit-scrollbar-thumb{background:var(--page-line);border-radius:3px}
+body.padapp.cols2 .scin::-webkit-scrollbar-track{background:transparent}
 .tcode{height:58px;border-radius:16px;background:var(--row);border:0;text-align:center;font-size:calc(24px * var(--fsz,1));font-weight:800;letter-spacing:.32em;text-indent:.32em;text-transform:uppercase;width:100%;color:var(--ink);-webkit-text-fill-color:var(--ink);user-select:text}
 .tcode::placeholder{color:var(--sub);-webkit-text-fill-color:var(--sub);opacity:.7;letter-spacing:.1em;text-indent:0;font-weight:600;font-size:calc(16px * var(--fsz,1))}
 .tcode:focus{outline:2px solid var(--pri)}
@@ -681,7 +692,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
   <span class="seg"><button data-m="both">한 화면</button><button data-m="phone">휴대폰</button><button data-m="remote">원격 조작판</button></span>
   <span id="roomPhone" hidden>방 코드 <code id="roomCode">----</code> <span class="st" id="roomSt">조작판 기다리는 중</span></span>
   <span id="roomRemote" hidden>휴대폰 방 코드 <input id="roomIn" maxlength="4" placeholder="ABCD" autocomplete="off"> <button class="link" id="roomGo">연결</button> <span class="st" id="roomSt2">연결 안 됨</span></span>
-  <span id="teamBox" title="BAR 앱과 CS 앱을 같은 팀 코드로 묶으면 서로 실제로 주고받아요">· 두 폰 연결 <input id="teamIn" maxlength="4" placeholder="팀 코드" autocomplete="off"> <button class="link" id="teamGo">연결</button> <span class="st" id="teamSt">—</span></span>
+  <span id="teamBox" title="BAR 앱과 CS 앱을 같은 팀 코드로 묶으면 서로 실제로 주고받아요"><span class="st" id="teamSt">연결 안 됨</span><span class="tlab">팀 코드</span><input id="teamIn" maxlength="4" placeholder="4글자" autocomplete="off" aria-label="팀 코드"><button class="link" id="teamGo">연결</button></span>
   <button class="link" id="introBtn">안내 보기</button>
 </div>
 <div class="intro" id="intro" hidden></div>
@@ -724,6 +735,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <h2>상황 만들기</h2>
       <div class="tgt" id="tgt" role="group" aria-label="상황을 보낼 곳"><button data-t="self" class="on"></button><button data-t="peer"></button><button data-t="both">둘 다</button></div>
       <p class="tgtnote" id="tgtnote" hidden></p>
+      <div class="scin" id="scin">
       <div id="schedGrp">
         <div class="grp" id="schedLab">매니저 Simon 역할 · 휴대폰에게</div>
         <div class="demo"><button class="span2" id="schedBtn" disabled>시간표 보내기</button></div>
@@ -773,7 +785,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
         <button data-d="reset">처음부터</button>
       </div>
       <div class="tog"><span>동료가 자동으로 대답하기</span><button class="sw on" id="autoRep" role="switch" aria-checked="true" aria-label="동료 자동 대답"></button></div>
-    </section>
+    </div></section>
     <section class="box" id="mirrorbox" hidden>
       <h2>휴대폰 상태</h2>
       <div class="mirror"><span>화면</span><b id="mScreen">—</b></div>
@@ -1111,7 +1123,7 @@ const Peer = (() => {
   let code=null, client=null, bc=null, peerSeen=0, seen=new Set(), pingIv=null;
   const $m = s => document.querySelector(s);
   const topic = () => `seehear/${code}/team`;
-  function ui(){ const e=$m('#teamSt'); if(!e) return; const live = peerSeen && Date.now()-peerSeen<15000; e.classList.toggle('on',!!live); e.textContent = !code ? '—' : live ? `${IS_CS?'BAR':'CS'} 폰 연결됨 · ${code}` : (client&&client.connected) ? '상대 폰 기다리는 중' : '중계소 연결 중…';  pageUi(); }
+  function ui(){ const e=$m('#teamSt'); if(!e) return; const live = peerSeen && Date.now()-peerSeen<15000; e.classList.toggle('on',!!live); e.textContent = !code ? '연결 안 됨' : live ? `${IS_CS?'아이폰':'아이패드'} 연결됨` : (client&&client.connected) ? `${IS_CS?'아이폰':'아이패드'} 찾는 중` : '연결하는 중…';  pageUi(); }
   const state = () => !code ? 'off' : (peerSeen && Date.now()-peerSeen<15000) ? 'on' : 'wait';
   const stText = () => { const o=IS_CS?'휴대폰':'아이패드'; const st=state(); return st==='off' ? '연결 안 됨' : st==='on' ? `${o} 앱과 연결됨 · ${code}` : `${o} 앱을 찾는 중 · ${code}`; };
   // 세팅 > 기기 연결 화면이 열려 있으면 다시 그리지 않고 글자만 바꿈 (입력 중인 칸을 건드리지 않게)
@@ -2446,6 +2458,7 @@ function fit(){
     P.style.transform = `scale(${k})`;
     $('#stage').style.width = w*k+'px'; $('#stage').style.height = h*k+'px';
     document.body.classList.toggle('cols2', wrapEl.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight) - 20 - w*k >= 620);
+    { const sd=document.querySelector('.side'); if(sd) sd.style.setProperty('--sideH', sd.clientHeight+'px'); }
     return;
   }
   const native = (small || (window.__nativeApp && innerWidth < 700)) && mode==='phone' && document.body.classList.contains('mbhide') && !land;
