@@ -239,6 +239,8 @@ button.msg{font-family:inherit}
 .tabs{position:absolute;left:0;right:0;bottom:0;height:78px;display:grid;grid-template-columns:repeat(5,1fr);padding:0 14px 8px;z-index:8}
 .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:calc(11px * var(--fsz,1));color:rgba(38,48,42,.5);position:relative;font-weight:500}
 .tab .ic{opacity:.5}
+.dot.blinkdot{animation:dotbl 1s ease-in-out infinite}
+@keyframes dotbl{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.82)}}
 .tab.on{color:var(--ink);font-weight:700}.tab.on .ic{opacity:1}
 .tab .ic{height:40px;display:flex;align-items:center;justify-content:center}
 .dot{position:absolute;top:8px;left:calc(50% + 5px);width:14px;height:14px;border-radius:50%;background:#e0201b;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(120,0,0,.45);opacity:1}
@@ -1233,7 +1235,7 @@ const Peer = (() => {
       case 'dangerEnd': { unsig('dz-peer'); S.alarms=S.alarms.filter(x=>x.id!=='dz-peer'); if(S.msg&&/^위험 · /.test(S.msg.text)) setMsg(`${n}: 위험 해제`,'dark',null,5000); log(`[상대 폰] ${n} 위험 해제`); break; }
       case 'pm': {
         const mm={...m.m,from:n,t:NOW(),id:Date.now()}; S.chats[n].push(mm);
-        if(!(S.tab==='pers'&&S.chatWith===n)){ sig('pm-'+n,'green','slow',SIDE[n],'pers'); S.dots.pers=true; setMsg(`${n}: ${mm.type==='text'?mm.v:mm.type==='emo'?mm.v:'필담'}`,'warn',{tab:'pers',chat:n},10000); }
+        if(!(S.tab==='pers'&&S.chatWith===n)){ sig('pm-'+n,'green','slow',SIDE[n],'pers'); S.dots.pers=true; }   // 개인 연락은 위쪽 띠에 띄우지 않고 Pers 의 빨간 점이 깜박임
         log(`[상대 폰] ${n} 개인 메시지: ${mm.type==='text'?'"'+mm.v+'"':mm.type==='emo'?'이모지 "'+mm.v+'"':'필담'}`); break; }
       case 'gx': {   // 상대 기기의 그룹 대화에 생긴 줄 (Lila 의 말, 상황 만들기로 생긴 말 등)을 그대로 따라 그림
         const who = m.m.from;   // 보내는 쪽에서 이미 '받는 기기 기준'으로 바꿔 보냄 (상대의 Simon = 나)
@@ -1283,7 +1285,7 @@ function chips(roleLabel='BAR', brk='09:00'){
 function msgBar(){ const m=S.msg; return m&&m.to ? `<button class="msg ${m.kind}" data-a="msgGo" style="cursor:pointer">${esc(m.text)} ›</button>` : `<div class="msg ${m?m.kind:''}">${m?esc(m.text):'중요한 메시지가 없습니다'}</div>`; }
 function tabBar(){
   const T=[['group','Group','grp',36],['pers','Pers','pers',24],['card','Card','card',44],['alarm','Alarm','bell',26],['set','Setting','gear',44]];
-  return `<nav class="tabs">${T.map(([k,l,i,s])=>`<button class="tab${S.tab===k||(k==='pers'&&S.pick)?' on':''}" data-a="tab" data-v="${k}"><span class="ic">${ic(i,s)}</span>${l}${S.dots[k]?'<i class="dot"></i>':''}</button>`).join('')}</nav>`;
+  return `<nav class="tabs">${T.map(([k,l,i,s])=>`<button class="tab${S.tab===k||(k==='pers'&&S.pick)?' on':''}" data-a="tab" data-v="${k}"><span class="ic">${ic(i,s)}</span>${l}${S.dots[k]?`<i class="dot${k==='pers'?' blinkdot':''}"${k==='pers'?` style="animation-delay:-${Date.now()%1000}ms"`:''}></i>`:''}</button>`).join('')}</nav>`;
 }
 function msgOnly(){
   // 메시지 띠만 바뀐 경우: 전체를 다시 그리지 않고 띠 내용·색만 교체
@@ -2382,7 +2384,7 @@ function demo(k){
   case 'dangerInL': addAlarm({id:'dz-hot',place:'',title:'뜨거운 물 지나감',sub:'POS 앞 · Lila가 알림',msg:'뜨거운 물 지나가요',pri:9,danger:1,c:'red',m:'fast',clip:'양쪽 · 빨강 · 빠르게'}); break;
   case 'pmsg': case 'pmsgL': { const who=k==='pmsgL'?'Lila':'Simon'; const pool = who==='Lila' ? ['5번 손님이 샷 추가 원해요','픽업대에 컵 홀더 다 떨어졌어요','다음 손님 디카페인이에요'] : ['우유 몇 개 남았어요?','픽업대 컵 좀 정리해 줄 수 있어요?','오븐에 샌드위치 넣어 뒀어요']; const t=pool[Math.floor(Math.random()*3)]; S.chats[who].push({from:who,type:'text',v:t,t:NOW(),id:Date.now()}); if(!(S.tab==='pers'&&S.chatWith===who)){ sig('pm-'+who,'green','slow',SIDE[who],'pers'); S.dots.pers=true; } log(`${who} 개인 메시지: "${t}"`); render(); break; }
   case 'gmsg': case 'gneed': case 'gmsgL': case 'gneedL': { const who=k.endsWith('L')?'Lila':'Simon'; const need=k.startsWith('gneed'); const t = need ? (who==='Lila'?'오늘 딸기 퓨레 남은 거 있어요?':'시럽 재고 확인한 사람 있나요?') : (who==='Lila'?['POS 2 열었어요','10시에 단체 주문 들어와요','영수증 용지 바꿨어요']:['BREW 새로 내렸어요','11시에 우유 입고 와요','러시 끝나면 바 청소 같이 해요'])[Math.floor(Math.random()*3)]; gpush({id:Date.now(),from:who,type:'text',v:t,t:NOW(),need}); if(S.tab!=='group'){ sig('grp','yellow',need?'fast':'slow','B','group'); S.dots.group=true; } log(`${who} 그룹 대화${need?' (대답 요망)':''}: "${t}"`); render(); break; }
-  case 'holdReply': case 'holdReplyL': { const who=k==='holdReplyL'?'Lila':'Simon'; sig('rep-'+who,'orange','slow',SIDE[who],'reply'); later(7000,()=>unsig('rep-'+who)); S.chats[who].push({from:who,type:'emo',v:'잠깐만요',t:NOW(),id:Date.now()}); setMsg(`${who}: 잠깐만요 · 지금은 어려워요`,'warn',{tab:'pers',chat:who},10000); log(`${who}가 보류(잠깐만요)로 대답`); render(); break; }
+  case 'holdReply': case 'holdReplyL': { const who=k==='holdReplyL'?'Lila':'Simon'; sig('rep-'+who,'orange','slow',SIDE[who],'reply'); later(7000,()=>unsig('rep-'+who)); S.chats[who].push({from:who,type:'emo',v:'잠깐만요',t:NOW(),id:Date.now()}); if(!(S.tab==='pers'&&S.chatWith===who)) S.dots.pers=true; log(`${who}가 보류(잠깐만요)로 대답`); render(); break; }
   case 'shift5': if(S.ho.stage!=='none'){ toast('이미 인수인계를 시작했어요'); return; } S.min=RC.shiftMin; S.ho.stage='ready'; setMsg('교대 5분 전 · 인수인계를 남겨 주세요','dark',{view:'ho'}); S.msg.sticky=true; log('교대 5분 전 · 인수인계 버튼 켜짐'); render(); break;
   case 'lilaGot': act('lilaGot'); break;
   case 'breakEnd': act('breakEnd'); break;
