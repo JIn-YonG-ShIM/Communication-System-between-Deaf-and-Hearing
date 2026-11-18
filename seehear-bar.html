@@ -551,7 +551,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .hatd .arc{height:110px;background:var(--pri);border-radius:110px 110px 0 0;position:relative;display:flex;align-items:center;justify-content:center;gap:16px;margin-top:6px}
 .hatd .arc span{background:#1e2c23;color:#cfe0d2;font-size:calc(11px * var(--fsz,1));padding:6px 26px;border-radius:6px}
 .hatd .arc button{width:38px;height:38px;border-radius:50%;background:#f4efd8;font-size:calc(12px * var(--fsz,1));font-weight:700;box-shadow:0 0 12px 4px rgba(255,240,180,.6)}
-#ctx:focus::placeholder{color:transparent;-webkit-text-fill-color:transparent}
+#ctx.typing::placeholder{color:transparent;-webkit-text-fill-color:transparent}
 .tt{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .tt div{background:var(--card);border-radius:10px;text-align:center;font-size:calc(10px * var(--fsz,1));color:var(--sub);padding:5px 0}
 .tt div b{display:block;font-size:calc(13px * var(--fsz,1));color:var(--ink)}
@@ -885,7 +885,7 @@ function fresh(){
     mgr:mgFresh(),   // 처음에는 사이클을 아직 돌지 않은 상태
     alarms:[], machinesOn:['COFFEE 1'],
     signals:[], dots:{group:false,pers:false,alarm:false},
-    group:[{id:1,from:'Simon',type:'text',v:'우유 입고가 10시로 바뀌었어요',t:'8:02'}],
+    group:[{id:1,from:IS_CS?'me':'Simon',type:'text',v:'우유 입고가 10시로 바뀌었어요',t:'8:02',replies:[]}],
     chats:{Simon:[],Lila:[],Tom:[],Jerry:[]}, chatWith:null, compose:null, emoSel:null, reactFor:null,
     call:null, card:{text:'',color:'white',menu:null,sel:null,favs:[{t:'도움이 필요하신가요?',g:'손님'},{t:'주문하신 케이크가 곧 나올 거예요, 조금만 기다려 주세요.',g:'손님'},{t:'우유 좀 가져다 주세요',g:'동료'},{t:'잠깐 자리 비울게요',g:'동료'}],hist:['얼음 2개','도움이 필요하신가요?','주문하신 케이크가 곧 나올 거예요, 조금만 기다려 주세요.','바닐라 시럽이랑 어떤게 필요하다고 했죠?','화장실은 2층에 있습니다.']},
     set:{page:null, cvd:false, bright:'보통', pref:['수어','필담'], speak:{on:false,'위험합니다. 조심하세요.':true,'도움이 필요해요.':false,'고마워요!':false}, brk:{group:false,pers:false,reply:true,mach:false}, editTab:'ing', editSel:null, test:null, extra:[]},
@@ -894,6 +894,8 @@ function fresh(){
   };
 }
 function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+// 그룹 대화에 한 줄 더하기. 두 기기가 연결돼 있으면 상대 화면에도 같은 줄이 생김 (내가 직접 보낸 말은 'gm'으로 따로 감)
+function gpush(m, fromPeer){ S.group.push(m); if(!fromPeer && m.from!=='me' && Peer.on) Peer.send({t:'gx', m:{type:m.type, v:m.v, need:!!m.need, from: m.from==='Simon' ? 'me' : m.from}}); return m; }
 function later(ms, fn){ timers.push(setTimeout(fn, ms)); }
 const auto = () => $('#autoRep').classList.contains('on');
 const hhmm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
@@ -1213,11 +1215,16 @@ const Peer = (() => {
         const mm={...m.m,from:n,t:NOW(),id:Date.now()}; S.chats[n].push(mm);
         if(!(S.tab==='pers'&&S.chatWith===n)){ sig('pm-'+n,'green','slow',SIDE[n],'pers'); S.dots.pers=true; setMsg(`${n}: ${mm.type==='text'?mm.v:mm.type==='emo'?mm.v:'필담'}`,'warn',{tab:'pers',chat:n},10000); }
         log(`[상대 폰] ${n} 개인 메시지: ${mm.type==='text'?'"'+mm.v+'"':mm.type==='emo'?'이모지 "'+mm.v+'"':'필담'}`); break; }
+      case 'gx': {   // 상대 기기의 그룹 대화에 생긴 줄 (Lila 의 말, 상황 만들기로 생긴 말 등)을 그대로 따라 그림
+        const who = m.m.from;   // 보내는 쪽에서 이미 '받는 기기 기준'으로 바꿔 보냄 (상대의 Simon = 나)
+        gpush({id:Date.now(), from:who, type:m.m.type, v:m.m.v, t:NOW(), need:!!m.m.need, replies: who==='me'?[]:undefined}, true);
+        if(S.tab!=='group' && who!=='me'){ sig('grp','yellow',m.m.need?'fast':'slow','B','group'); S.dots.group=true; }
+        log(`[상대 폰] 그룹 대화 따라 그림 · ${who}`); break; }
       case 'gm': {
-        const mm={...m.m,from:n,t:NOW(),id:Date.now(),need:!!m.need}; S.group.push(mm);
+        const mm={...m.m,from:n,t:NOW(),id:Date.now(),need:!!m.need}; gpush(mm,true);
         if(S.tab!=='group'){ sig('grp','yellow',m.need?'fast':'slow','B','group'); S.dots.group=true; }
         log(`[상대 폰] ${n} 그룹 대화${m.need?' (대답 요망)':''}: ${mm.type==='text'?'"'+mm.v+'"':mm.type==='emo'?'이모지 "'+mm.v+'"':'필담'}`); break; }
-      case 'gReply': { const g=S.group.filter(x=>x.from==='me'&&x.need).pop(); if(g&&!g.replies.includes(n)) g.replies.push(n); S.group.push({id:Date.now(),from:n,type:m.m.type,v:m.m.v,t:NOW()}); sig('rep-'+n,'blue','slow',SIDE[n],'reply'); later(5000,()=>unsig('rep-'+n)); log(`[상대 폰] ${n} 그룹 대답`); break; }
+      case 'gReply': { const g=S.group.filter(x=>x.from==='me'&&x.need).pop(); if(g&&!g.replies.includes(n)) g.replies.push(n); gpush({id:Date.now(),from:n,type:m.m.type,v:m.m.v,t:NOW()},true); sig('rep-'+n,'blue','slow',SIDE[n],'reply'); later(5000,()=>unsig('rep-'+n)); log(`[상대 폰] ${n} 그룹 대답`); break; }
       default: return;
     }
     render();
@@ -2150,15 +2157,15 @@ function act(a, d={}){
     else if(S.compose&&S.compose.mode==='pad'){ const img=padImage(); const tx=($('#tx')?.value||'').trim(); if(img) m={type:'hand',v:img}; else if(tx) m={type:'text',v:tx}; }
     else { const tx=($('#tx')?.value||'').trim(); if(tx) m={type:'text',v:tx}; }
     if(!m){ toast('보낼 내용을 먼저 써 주세요'); return; }
-    Object.assign(m,{id:Date.now(),from:'me',t:NOW(),need,replies:[]}); S.group.push(m); S.compose=null; S.emoSel=null; S.draft='';
+    Object.assign(m,{id:Date.now(),from:'me',t:NOW(),need,replies:[]}); gpush(m); S.compose=null; S.emoSel=null; S.draft='';
     unsig('grp'); S.group.forEach(x=>{ if(x.from!=='me' && x.need) x.answered=true; });
     log(`그룹 대화에 ${need?'대답 요망으로 ':''}보냄`);
     if(need){ setMsg('대답 2명 중 0명','dark',{tab:'group'}); S.msg.sticky=true; }
     render();
     if(Peer.on){ Peer.send({t:'gm',m:{type:m.type,v:m.v},need}); log('→ 상대 폰 그룹 대화로 보냄'); }
     if(need && auto()){
-      if(!Peer.on) later(2600,()=>{ m.replies.push('Simon'); S.group.push({id:Date.now(),from:'Simon',type:'text',v:'네, 확인했어요',t:NOW()}); sig('rep-Simon','blue','slow','L','reply'); later(5000,()=>unsig('rep-Simon')); setMsg('대답 2명 중 1명','dark',{tab:'group'}); S.msg.sticky=true; render(); });
-      later(5200,()=>{ m.replies.push('Lila'); S.group.push({id:Date.now(),from:'Lila',type:'emo',v:'확인했어요',t:NOW()}); sig('rep-Lila','blue','slow','R','reply'); later(5000,()=>unsig('rep-Lila')); setMsg('대답 2명 중 2명 · 모두 대답함','ok',{tab:'group'},5000); render(); });
+      if(!Peer.on) later(2600,()=>{ m.replies.push('Simon'); gpush({id:Date.now(),from:'Simon',type:'text',v:'네, 확인했어요',t:NOW()}); sig('rep-Simon','blue','slow','L','reply'); later(5000,()=>unsig('rep-Simon')); setMsg('대답 2명 중 1명','dark',{tab:'group'}); S.msg.sticky=true; render(); });
+      later(5200,()=>{ m.replies.push('Lila'); gpush({id:Date.now(),from:'Lila',type:'emo',v:'확인했어요',t:NOW()}); sig('rep-Lila','blue','slow','R','reply'); later(5000,()=>unsig('rep-Lila')); setMsg('대답 2명 중 2명 · 모두 대답함','ok',{tab:'group'},5000); render(); });
     }
     break; }
   case 'reactOpen': S.reactFor = S.reactFor===+v ? null : +v; render(); break;
@@ -2249,7 +2256,7 @@ function peopleDom(open){
   const old=$('#people'), od=$('#pdim');
   if(open){
     if(old) return;
-    P.insertAdjacentHTML('beforeend', `<div class="dim" id="pdim" data-a="closeTab"></div><div class="people" id="people">${['Simon','Lila','Jerry'].map(n=>`<button class="person${n==='Jerry'?' off':''}${unreadOf(n)?' new':''}" data-a="openChat" data-v="${n}" aria-label="${n==='Jerry'?'아직 출근하지 않은 동료':n+(unreadOf(n)?' · 새 메시지 '+unreadOf(n)+'개':'')}"><i>${n==='Jerry'?'':PERSON}${unreadOf(n)?`<em class="nb">${unreadOf(n)}</em>`:''}</i><span>${n}</span>${unreadOf(n)?`<small class="pv">${lastFrom(n)}</small>`:''}</button>`).join('')}</div>`);
+    P.insertAdjacentHTML('beforeend', NMH(`<div class="dim" id="pdim" data-a="closeTab"></div><div class="people" id="people">${['Simon','Lila','Jerry'].map(n=>`<button class="person${n==='Jerry'?' off':''}${unreadOf(n)?' new':''}" data-a="openChat" data-v="${n}" aria-label="${n==='Jerry'?'아직 출근하지 않은 동료':n+(unreadOf(n)?' · 새 메시지 '+unreadOf(n)+'개':'')}"><i>${n==='Jerry'?'':PERSON}${unreadOf(n)?`<em class="nb">${unreadOf(n)}</em>`:''}</i><span>${n}</span>${unreadOf(n)?`<small class="pv">${lastFrom(n)}</small>`:''}</button>`).join('')}</div>`));
     P.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.v==='pers' || t.dataset.v===S.tab));
   } else {
     if(old){ old.classList.add('out'); od&&od.classList.add('out'); setTimeout(()=>{ old.remove(); od&&od.remove(); P.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.v===S.tab)); },180); }
@@ -2341,7 +2348,7 @@ function demo(k){
   case 'dangerIn': addAlarm({id:'dz-glass',place:'',title:'유리 깨짐',sub:'CS 쪽 · Simon이 알림',msg:'유리 깨짐 주의',pri:9,danger:1,c:'red',m:'fast',clip:'양쪽 · 빨강 · 빠르게'}); break;
   case 'dangerInL': addAlarm({id:'dz-hot',place:'',title:'뜨거운 물 지나감',sub:'POS 앞 · Lila가 알림',msg:'뜨거운 물 지나가요',pri:9,danger:1,c:'red',m:'fast',clip:'양쪽 · 빨강 · 빠르게'}); break;
   case 'pmsg': case 'pmsgL': { const who=k==='pmsgL'?'Lila':'Simon'; const pool = who==='Lila' ? ['5번 손님이 샷 추가 원해요','픽업대에 컵 홀더 다 떨어졌어요','다음 손님 디카페인이에요'] : ['우유 몇 개 남았어요?','픽업대 컵 좀 정리해 줄 수 있어요?','오븐에 샌드위치 넣어 뒀어요']; const t=pool[Math.floor(Math.random()*3)]; S.chats[who].push({from:who,type:'text',v:t,t:NOW(),id:Date.now()}); if(!(S.tab==='pers'&&S.chatWith===who)){ sig('pm-'+who,'green','slow',SIDE[who],'pers'); S.dots.pers=true; } log(`${who} 개인 메시지: "${t}"`); render(); break; }
-  case 'gmsg': case 'gneed': case 'gmsgL': case 'gneedL': { const who=k.endsWith('L')?'Lila':'Simon'; const need=k.startsWith('gneed'); const t = need ? (who==='Lila'?'오늘 딸기 퓨레 남은 거 있어요?':'시럽 재고 확인한 사람 있나요?') : (who==='Lila'?['POS 2 열었어요','10시에 단체 주문 들어와요','영수증 용지 바꿨어요']:['BREW 새로 내렸어요','11시에 우유 입고 와요','러시 끝나면 바 청소 같이 해요'])[Math.floor(Math.random()*3)]; S.group.push({id:Date.now(),from:who,type:'text',v:t,t:NOW(),need}); if(S.tab!=='group'){ sig('grp','yellow',need?'fast':'slow','B','group'); S.dots.group=true; } log(`${who} 그룹 대화${need?' (대답 요망)':''}: "${t}"`); render(); break; }
+  case 'gmsg': case 'gneed': case 'gmsgL': case 'gneedL': { const who=k.endsWith('L')?'Lila':'Simon'; const need=k.startsWith('gneed'); const t = need ? (who==='Lila'?'오늘 딸기 퓨레 남은 거 있어요?':'시럽 재고 확인한 사람 있나요?') : (who==='Lila'?['POS 2 열었어요','10시에 단체 주문 들어와요','영수증 용지 바꿨어요']:['BREW 새로 내렸어요','11시에 우유 입고 와요','러시 끝나면 바 청소 같이 해요'])[Math.floor(Math.random()*3)]; gpush({id:Date.now(),from:who,type:'text',v:t,t:NOW(),need}); if(S.tab!=='group'){ sig('grp','yellow',need?'fast':'slow','B','group'); S.dots.group=true; } log(`${who} 그룹 대화${need?' (대답 요망)':''}: "${t}"`); render(); break; }
   case 'holdReply': case 'holdReplyL': { const who=k==='holdReplyL'?'Lila':'Simon'; sig('rep-'+who,'orange','slow',SIDE[who],'reply'); later(7000,()=>unsig('rep-'+who)); S.chats[who].push({from:who,type:'emo',v:'잠깐만요',t:NOW(),id:Date.now()}); setMsg(`${who}: 잠깐만요 · 지금은 어려워요`,'warn',{tab:'pers',chat:who},10000); log(`${who}가 보류(잠깐만요)로 대답`); render(); break; }
   case 'shift5': if(S.ho.stage!=='none'){ toast('이미 인수인계를 시작했어요'); return; } S.min=RC.shiftMin; S.ho.stage='ready'; setMsg('교대 5분 전 · 인수인계를 남겨 주세요','dark',{view:'ho'}); S.msg.sticky=true; log('교대 5분 전 · 인수인계 버튼 켜짐'); render(); break;
   case 'lilaGot': act('lilaGot'); break;
@@ -2568,6 +2575,9 @@ if(window.__nativeApp && innerWidth >= 700) Intro.open();
 
 document.addEventListener('input', e=>{ if(e.target && e.target.id==='teamCode'){ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); S.set.teamDraft=e.target.value; } });
 document.addEventListener('keydown', e=>{ if(e.target && e.target.id==='teamCode' && e.key==='Enter'){ e.target.blur(); act('teamPg'); } });
+
+document.addEventListener('pointerdown', e=>{ if(e.target && e.target.id==='ctx') e.target.classList.add('typing'); }, true);   // 직접 눌러 쓰기 시작하면 안내 글자를 숨김
+document.addEventListener('focusout', e=>{ if(e.target && e.target.id==='ctx') e.target.classList.remove('typing'); });
 
 addEventListener('resize', fit);
 // 아이패드 전용 앱: 상태바·홈 막대 자리(안전 영역)나 글꼴이 늦게 잡혀도 아이폰 크기를 다시 맞춤
