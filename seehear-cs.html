@@ -663,7 +663,12 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .rp:active{transform:scale(.98);background:var(--ink);color:#fff}
 /* 깜박이는 단추는 전부 같은 효과 ('Peter에게 제안 보내기'와 동일: 1초에 한 번, 초록 ↔ 연두 + 옅은 테두리 빛) */
 .rp.blink{border-color:var(--pri);background:var(--pri);color:#fff}
-.rp.blink,.mgbtn.blink,.mgpopc .prim.blink{animation:schedbl 1s ease-in-out infinite;transition:none}
+.rp.blink,.mgbtn.blink,.mgpopc .prim.blink{position:relative;transition:none;animation:none;isolation:isolate}
+.rp.blink::after,.mgbtn.blink::after,.mgpopc .prim.blink::after{content:"";position:absolute;inset:0;border-radius:inherit;background:#fff;opacity:0;pointer-events:none;animation:blinkfx 1s ease-in-out infinite}
+.rp.blink::before,.mgbtn.blink::before,.mgpopc .prim.blink::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 6px rgba(63,107,76,.28);opacity:0;pointer-events:none;animation:blinkring 1s ease-in-out infinite;z-index:-1}
+.rp.blink::after,.rp.blink::before{inset:-2px}
+@keyframes blinkfx{0%,100%{opacity:0}50%{opacity:.4}}
+@keyframes blinkring{0%,100%{opacity:0}50%{opacity:1}}
 .ttl{font-size:calc(19px * var(--fsz,1));font-weight:700;margin:0}
 .tbl{background:var(--card);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:8px}
 .leg{display:flex;gap:10px;font-size:calc(11px * var(--fsz,1));font-weight:700}
@@ -2064,7 +2069,9 @@ function act(a, d={}){
   case 'clipUsb': Clip.usb(); break;
   case 'clipNext': S.screen='rolepick'; log(Clip.on?'클립 연결하고 시작':'클립 없이 시작 (시연)'); render(); break;
   case 'pickMgr': if(!IS_CS){ toast('이 아이폰은 파트너 Peter의 화면이에요 · 파트너를 골라 주세요'); break; }
-    S.screen='mHome'; S.min=6*60; S.mgr=mgFresh(); log('매니저로 시작 · 오늘 근무 정하기'); render(); break;
+    S.mgr=mgFresh();
+    if(EXP_MODE==='solo'){ S.mgr.me=MG_DEF.me.rows.slice(); S.mgr.peter='ok'; S.mgr.away={Lila:true,Jerry:true}; log('혼자 체험 · 시간표는 미리 정해진 것으로 두고 바로 시작'); mgAct('mgGo'); break; }
+    S.screen='mHome'; S.min=6*60; log('매니저로 시작 · 오늘 근무 정하기'); render(); break;
   case 'pickPartner': if(IS_CS){ toast(NM('아이패드는 매니저 Simon의 화면이에요 · 매니저를 골라 주세요')); break; }
     S.screen='pHome'; S.min=RC.startMin;
     if(!IS_CS && Peer.on){ render(); Peer.send({t:'waitSched'}); log('아이패드(매니저)의 시간표를 기다리는 중'); break; }   // 연결돼 있으면 아이패드의 '시간표 보내기'를 기다림
@@ -2556,7 +2563,7 @@ const Intro = (()=>{
   const P0 = {a:0, k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p class="ivcta">아이패드와 앞의 아이폰, 클립으로 직접 체험해보세요.</p>
     <div class="ivpick"><button data-in="solo"><b>혼자 체험하기</b><small>아이패드 하나로</small></button><button data-in="duo"><b>둘이서 체험하기</b><small>아이패드와 아이폰으로</small></button></div>`};
   const SOLO = {a:1, k:'혼자 체험하기 · 아이패드', h:'아이패드 하나로 체험해요', b:`<ol>
-    ${li(1,`<b>왼쪽 화면</b>은 <b>${padWho}</b>의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’ → <b>‘매니저’</b>를 고르고, 오늘 시간표를 정한 뒤 ${me} 화면으로 들어가요.`)}
+    ${li(1,`<b>왼쪽 화면</b>은 <b>${padWho}</b>의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’ → <b>‘매니저’</b>를 누르면 바로 ${me} 화면이에요.`)}
     ${li(2,`<b>오른쪽 ‘상황 만들기’</b>의 단추를 눌러 보세요. 손님 호출, 동료 ${phMe}의 메시지와 요청, 위험 알림이 일어나요.`)}
     ${li(3,`그때마다 <b>모자 그림과 실제 클립</b>에 어떤 빛이 켜지는지 보세요.`)}
     ${li(4,`왼쪽 화면에서 요청에 <b>‘가져갈게요’</b>로 답하고, ${me} 사이클의 할 일을 눌러 체크해 보세요.`)}</ol><p class="ivnote">혼자일 때는 아이폰을 쓰지 않아도 돼요.</p>`};
