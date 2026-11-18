@@ -134,13 +134,17 @@ body.padapp #introBtn{display:inline-block;margin-left:auto}
 :root[data-theme="dark"] .intro .ivik{color:#9cc5a6}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .intro .ivik{color:#9cc5a6}}
 .intro h3{font-size:30px;line-height:1.25;margin:0 0 14px;font-weight:800;letter-spacing:-.01em;word-break:keep-all}
-.intro p{font-size:17px;line-height:1.6;margin:0 0 10px;color:var(--page-sub);word-break:keep-all}
+.intro p{font-size:17px;line-height:1.6;margin:0 0 10px;color:var(--page-ink);word-break:keep-all}
+.intro p b,.intro li b{font-weight:800}
+.intro p.ivcta{margin-top:14px;font-size:18px;font-weight:800;color:#2f5a3c}
+:root[data-theme="dark"] .intro p.ivcta{color:#a8d4b3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .intro p.ivcta{color:#a8d4b3}}
 .intro ol,.intro ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
-.intro li{display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.5;word-break:keep-all}
+.intro li{display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.5;word-break:keep-all;color:var(--page-ink)}
 .intro li>i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--page-btn);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:14px;margin-top:-1px}
 .intro li>i.d{width:16px;height:16px;margin:5px 6px 0}
 .intro li b{font-weight:800}
-.intro .ivnote{font-size:14px;color:var(--page-sub);margin:12px 0 0}
+.intro .ivnote{font-size:14.5px;color:var(--page-ink);opacity:.82;margin:12px 0 0}
 .intro .ivif{display:flex;align-items:center;gap:10px}
 .intro .ivdots{display:flex;gap:7px;margin:0 auto 0 6px}
 .intro .ivdots span{width:8px;height:8px;border-radius:50%;background:var(--page-line)}
@@ -2294,9 +2298,9 @@ const Intro = (()=>{
     `<svg viewBox="0 0 250 250"><g><path d="M30 78a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="71" r="8" fill="#2f80ff"/><circle cx="47" cy="71" r="14" fill="#2f80ff" opacity=".3"/><circle cx="81" cy="71" r="6" fill="${D}" opacity=".4"/><text x="112" y="76" font-size="13" font-weight="800" fill="${D}">왼쪽 동료가 불러요</text></g><g><path d="M30 138a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="131" r="6" fill="${D}" opacity=".4"/><circle cx="81" cy="131" r="8" fill="#34c759"/><circle cx="81" cy="131" r="14" fill="#34c759" opacity=".3"/><text x="112" y="136" font-size="13" font-weight="800" fill="${D}">오른쪽 동료가 불러요</text></g><g><path d="M30 198a34 28 0 0 1 68 0v5H30z" fill="${G}"/><circle cx="47" cy="191" r="8" fill="#ff3b30"/><circle cx="47" cy="191" r="14" fill="#ff3b30" opacity=".3"/><circle cx="81" cy="191" r="8" fill="#ff3b30"/><circle cx="81" cy="191" r="14" fill="#ff3b30" opacity=".3"/><text x="112" y="196" font-size="13" font-weight="800" fill="${D}">양쪽 빨강 · 위험</text></g></svg>`
   ];
   const pages = [
-    {k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p>이 아이패드와 옆의 휴대폰, 클립 두 개로 직접 체험해 보세요.</p>`},
+    {k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p class="ivcta">이 아이패드와 앞의 휴대폰, 클립으로 직접 체험해보세요.</p>`},
     {k:`이 아이패드 · ${me} 자리`, h:'농인 파트너 Peter가 되어 보세요', b:`<ol><li><i>1</i><span><b>왼쪽 화면</b>은 Peter의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’으로 시작해요.</span></li><li><i>2</i><span><b>오른쪽 ‘상황 만들기’</b> 버튼을 누르면 손님 호출, 동료의 메시지, 위험 알림이 일어나요.</span></li><li><i>3</i><span>그때마다 <b>모자 그림과 실제 클립</b>에 어떤 빛이 켜지는지 보세요.</span></li>${IS_CS?`<li><i>4</i><span>들어온 요청은 왼쪽 화면에서 <b>‘가져갈게요’</b>로 대답할 수 있어요.</span></li>`:''}</ol>`},
-    {k:`옆의 휴대폰 · ${other} 자리`, h:'함께 일하는 동료가 되어 보세요', b:`<ul><li><i class="d" style="background:#3f6b4c"></i><span><b>재료 요청 · 지원 요청</b>을 보내면 이 아이패드 화면과 ${me} 클립에 도착해요.</span></li><li><i class="d" style="background:#e5463b"></i><span><b>위험 알리기</b>를 누르면 모든 클립이 빨강으로 빠르게 깜박여요.</span></li><li><i class="d" style="background:#2f80ff"></i><span><b>메시지</b>를 보내면 받는 사람의 클립에 불이 켜져요.</span></li></ul><p class="ivnote">위쪽 ‘두 폰 연결’에 초록 점이 켜져 있으면 휴대폰과 이어진 상태예요.</p>`},
+    {k:`앞의 휴대폰 · ${other} 자리`, h:'함께 일하는 동료가 되어 보세요', b:`<ul><li><i class="d" style="background:#3f6b4c"></i><span><b>재료 요청 · 지원 요청</b>을 보내면 이 아이패드 화면과 ${me} 클립에 도착해요.</span></li><li><i class="d" style="background:#e5463b"></i><span><b>위험 알리기</b>를 누르면 모든 클립이 빨강으로 빠르게 깜박여요.</span></li><li><i class="d" style="background:#2f80ff"></i><span><b>메시지</b>를 보내면 받는 사람의 클립에 불이 켜져요.</span></li></ul><p class="ivnote">위쪽 ‘두 폰 연결’에 초록 점이 켜져 있으면 휴대폰과 이어진 상태예요.</p>`},
     {k:'클립의 빛 읽는 법', h:'어느 쪽에서, 얼마나 급한지', b:`<ul><li><i class="d" style="background:#2f80ff"></i><span><b>불이 켜진 쪽</b>이 부르는 동료가 있는 방향이에요.</span></li><li><i class="d" style="background:#ffd60a"></i><span><b>양쪽</b>이 켜지면 손님 호출, 그룹 대화, 위험처럼 모두가 알아야 하는 일이에요.</span></li><li><i class="d" style="background:#ff3b30"></i><span><b>빨강 · 빠르게</b>는 위험이에요. 다른 빛보다 먼저 나와요.</span></li></ul><p class="ivnote">깜박임이 끝나도 내용은 앱의 Alarm에 남아 있어요.</p>`}
   ];
   function paint(){
