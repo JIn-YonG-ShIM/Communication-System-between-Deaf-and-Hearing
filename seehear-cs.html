@@ -78,6 +78,8 @@ body[data-mode="remote"] .side{width:min(520px,100%)}
 .tgtnote{font-size:12px;line-height:1.45;color:var(--page-sub);margin:-2px 2px 10px}
 .tgtnote.warn{color:#c0392b}
 [data-role].roff{display:none}
+#restartBtn{display:block;width:100%;min-height:48px;border-radius:999px;background:#3f6b4c;color:#fff;font-size:15px;font-weight:700;text-align:center;transition:background .2s}
+#restartBtn.sure{background:#c0392b}
 #schedGrp{margin:0 0 4px}
 #schedBtn{font-weight:700}
 #schedBtn:disabled{opacity:.45;cursor:default}
@@ -649,6 +651,11 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
         <p style="margin:8px 0 0">펌웨어 <b>seehear_clip.ino v1.2</b> 기준 (색 확인 팝업은 v1.2의 <code>rgb r g b</code> 명령을 써요) — 기기 이름 <code>SeeHear-Clip</code>, 명령 특성 <code>6a4e0002-…c001</code>, USB 115200.</p>
       </details>
       <p class="note" id="cnote" hidden></p>
+    </section>
+    <section class="box" id="restartbox">
+      <h2>처음부터 체험 시작하기</h2>
+      <p class="note" id="restartNote" style="margin:0 0 10px">다음 관람객을 위해 아이패드와 휴대폰을 처음 화면으로 되돌려요. 클립 연결과 두 기기의 연결은 그대로 남아요.</p>
+      <button id="restartBtn">처음부터 시작</button>
     </section>
     <section class="box" id="scenebox">
       <h2>상황 만들기</h2>
@@ -2158,6 +2165,21 @@ const Sched = (()=>{
     Peer.send({t:'sched'}); log('→ 휴대폰으로 시간표 보냄 (매니저 Simon 역할)'); wait=false; paint(); });
   setInterval(paint, 2000);
   return {paint, peerWait};
+})();
+// ---------- 처음부터 체험 시작하기 (다음 관람객) ----------
+(()=>{ let armed=null;
+  const b=()=>document.getElementById('restartBtn');
+  const disarm=()=>{ clearTimeout(armed); armed=null; const x=b(); if(x){ x.classList.remove('sure'); x.textContent='처음부터 시작'; } };
+  document.addEventListener('click', e=>{ const x=e.target.closest('#restartBtn'); if(!x) return;
+    if(!armed){ x.classList.add('sure'); x.textContent='한 번 더 누르면 처음으로 돌아가요'; armed=setTimeout(disarm,4000); return; }   // 실수로 눌러 체험이 지워지지 않게 두 번 눌러야 함
+    disarm();
+    const phone = Peer.on;
+    if(phone) Peer.send({t:'demo',k:'reset',label:'처음부터 체험 시작'});
+    reset();
+    log(phone ? '처음부터 다시 시작 · 아이패드와 휴대폰' : '처음부터 다시 시작 · 이 기기만 (휴대폰은 연결되지 않음)');
+    if(!phone) alert2('휴대폰이 연결돼 있지 않아 이 기기만 처음으로 돌렸어요');
+    Intro.open();
+  });
 })();
 // ---------- 상황을 보낼 곳 (이 기기 / 상대 휴대폰 / 둘 다) ----------
 const Target = (()=>{
