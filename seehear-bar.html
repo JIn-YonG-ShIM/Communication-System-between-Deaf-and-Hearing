@@ -648,6 +648,13 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .mgpopc .prim{height:58px;border-radius:29px;font-size:calc(18px * var(--fsz,1))}
 
 .mgpopc .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mysch{display:flex;flex-direction:column;gap:6px}
+.mysch>div{display:flex;align-items:center;gap:10px;background:var(--row);border-radius:16px;padding:0 14px;min-height:52px;border:2px solid transparent}
+.mysch span{font-size:calc(13px * var(--fsz,1));color:var(--sub);font-weight:600;width:104px;flex:none}
+.mysch b{font-size:calc(18px * var(--fsz,1));font-weight:800;flex:1}
+.mysch em{font-style:normal;font-size:calc(12px * var(--fsz,1));font-weight:800;background:var(--pri);color:#fff;border-radius:999px;padding:5px 12px}
+.mysch .now{background:var(--card);border-color:var(--pri)}.mysch .now span{color:var(--pri)}
+.mysch .brk b{color:var(--purple)}.mysch .brk.now{border-color:var(--purple)}.mysch .brk.now em{background:var(--purple)}
 .mgrole{align-self:center;background:var(--pri);color:#fff;font-size:calc(30px * var(--fsz,1));font-weight:800;border-radius:32px;padding:8px 34px}
 .mg3{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px}
 .mg3 span{background:var(--row);border-radius:14px;padding:8px 4px;text-align:center}
@@ -1251,6 +1258,8 @@ const PERSON = IC.pers.replace('<svg','<svg width="30" height="44" style="displa
 
 /* ───── 렌더 ───── */
 function statusBar(){ return `<div class="sb"><span>${hhmm(S.min)}</span><i style="color:var(--ink)">${IC.stat.replace('<svg','<svg width="85" height="13"')}</i></div>`; }
+// 지금 시각에 해당하는 내 시간표 줄
+function schedNow(){ const r=S.prop.rows, h=Math.floor(S.min/60); let cur=r[0]; r.forEach(x=>{ if(+x.h.slice(0,2)<=h) cur=x; }); return cur; }
 const END = () => (IS_CS && S.mgr && S.mgr.me) ? '13:00' : '11:00';
 function chips(roleLabel='BAR', brk='09:00'){
   return `<div class="chips${S.roleMenu?' fade':''}" id="chips">
@@ -1856,11 +1865,20 @@ function setView(){
   const head = t => `<h4 style="font-size:calc(22px * var(--fsz,1))">${t}</h4><button class="sx" data-a="setPage" data-v="" aria-label="세팅으로 돌아가기">${X}</button>`;
   const item = (k,l,v) => `<button class="si" data-a="setPage" data-v="${k}">${l}<span>${v} ›</span></button>`;
   if(!p) return `<h4 style="font-size:calc(22px * var(--fsz,1))">세팅</h4><button class="sx" data-a="closeTab" aria-label="닫기">${X}</button>
+    <span class="sg">근무</span><div class="sl">${item('sched','내 시간표',(()=>{ const c=schedNow(); return `지금 ${c.b?'휴게':c.r}`; })())}</div>
     <span class="sg">기기</span><div class="sl">${item('team', IS_CS?'아이폰 앱과 연결':'아이패드 앱과 연결', {off:'연결 안 됨',on:'연결됨',wait:'찾는 중'}[Peer.state])}</div>
     <span class="sg">클립</span><div class="sl">${item('clip','클립 연결','클립 1개 연결됨')}${item('cvd','클립 색 모드',st.cvd?'색각이상자용':'일반')}${item('bright','클립 밝기',st.bright)}${item('loud','클립 큰 소리 감지',st.loud||'보통')}</div>
     <span class="sg">소통</span><div class="sl">${item('pref','내가 선호하는 소통 방식',st.pref.join(' · ')||'없음')}${item('edit','요청 버튼 편집',(S.ing.length+S.sup.length)+'개')}${item('speak','말로 위험 알리기',st.speak.on?(Voice.on?'듣는 중':'켜짐'):'꺼짐')}</div>
     <span class="sg">알람</span><div class="sl">${item('mach','알람 받을 기계','내 역할 기준')}${item('brk','휴식 중 알림',Object.values(st.brk).some(Boolean)?'위험 외 '+Object.values(st.brk).filter(Boolean).length+'개':'위험만')}</div>
     <span class="sg">화면 · 계정</span><div class="sl">${item('font','글자 크기',{0.9:'작게',1:'보통',1.12:'크게'}[S.fsz])}${item('theme','화면 색',{sage:'세이지',mist:'미스트 슬레이트',oat:'오트 & 딥그린'}[S.theme])}${item('me','내 정보 · 로그아웃','')}</div>`;
+  if(p==='sched'){
+    const r=S.prop.rows, cur=schedNow(), brk=r.find(x=>x.b), end=END();
+    const nextH = x => { const k=r.indexOf(x); return r[k+1] ? r[k+1].h : end; };
+    return `${head('내 시간표')}
+      <div class="mg3"><span><small>출근</small><b>${r[0].h}</b></span><span><small>휴게</small><b>${brk?`${brk.h} – ${nextH(brk)}`:'없음'}</b></span><span><small>퇴근</small><b>${end}</b></span></div>
+      <span class="sg">오늘 내 순서</span>
+      <div class="mysch">${r.map(x=>`<div class="${x===cur?'now':''}${x.b?' brk':''}"><span>${x.h} – ${nextH(x)}</span><b>${x.b?'휴게':x.r}</b>${x===cur?'<em>지금</em>':''}</div>`).join('')}</div>`;
+  }
   if(p==='team'){
     const o = IS_CS ? '아이폰' : '아이패드', draft = (st.teamDraft!=null ? st.teamDraft : (Peer.code||''));
     return `${head(o+' 앱과 연결')}<div class="tstat ${Peer.state}" id="teamPgSt"><i></i><span>${Peer.stText}</span></div>
