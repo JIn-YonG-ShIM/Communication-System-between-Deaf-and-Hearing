@@ -630,6 +630,11 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .mge .b.brk{background:var(--lav);border-color:var(--lav);color:var(--purple);font-size:calc(12.5px * var(--fsz,1))}
 .mge .b.brk.on{background:var(--purple);border-color:var(--purple);color:#fff}
 .mge .b.brk.oth{background:#cfe9ec;border-color:#cfe9ec;color:#1f6f78}
+.chips.mgdim{filter:blur(3px);opacity:.55}
+.mg.focusme *{pointer-events:none}
+.mg.focusme .mgseg,.mg.focusme .mgh,.mg.focusme .mgbot,.mg.focusme .mgcard:not(:first-child),.mg.focusme .mgcard:first-child>:not(.merow),.mg.focusme .merow>span{filter:blur(3px);opacity:.55;transition:filter .25s,opacity .25s}
+.mg.focusme .merow{background:var(--card);border-color:var(--pri)}
+.mg.focusme .merow .mgbtn{pointer-events:auto;height:50px;border-radius:25px;padding:0 24px;font-size:calc(16px * var(--fsz,1))}
 .mgpop{position:absolute;inset:0;z-index:30;background:rgba(38,48,42,.5);display:flex;align-items:center;justify-content:center;padding:22px;animation:fadein .2s ease}
 .mgpopc{width:100%;background:var(--card);border-radius:28px;padding:22px 18px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 40px rgba(0,0,0,.3);animation:popup .25s ease}
 .mgpopc>small{font-size:calc(13px * var(--fsz,1));font-weight:700;color:var(--pri)}
@@ -1348,7 +1353,7 @@ const mgFresh = () => ({view:'solo', me:null, peter:'none', peterRows:MG_DEF.pet
 const mgBrk = rows => { const i=rows.indexOf('휴게'); return i<0 ? null : MG_HOURS[i]; };
 const mgNext = h => { const i=MG_HOURS.indexOf(h); return MG_HOURS[i+1] || '13:00'; };
 const mgSub = (who,rows) => { const d=MG_DEF[who], b=mgBrk(rows); return `${d.start} – ${d.end}${b?` · 휴게 ${b} – ${mgNext(b)}`:''}`; };
-const mgHead = () => `<div class="chips" style="pointer-events:none"><div class="chip role">${ic('barista',18,'#fff')}매니저</div></div>`;
+const mgHead = (dim) => `<div class="chips${dim?' mgdim':''}" style="pointer-events:none"><div class="chip role">${ic('barista',18,'#fff')}매니저</div></div>`;
 function mgGrid(){
   const m=S.mgr, cols = m.view==='with' ? 5 : 7;
   const line = (name,rows,cls,on) => `<span class="n">${name}</span>${MG_HOURS.slice(0,cols).map((h,i)=>{ const r=rows[i]; if(r===undefined||r===null) return `<span class="c off"></span>`; return on ? `<span class="c ${r==='휴게'?'brk':cls}">${r}</span>` : `<span class="c emp">+</span>`; }).join('')}`;
@@ -1363,8 +1368,9 @@ function mgHomeView(){
   const n = (m.me?1:0)+(m.peter==='ok'?1:0)+(m.away.Lila?1:0)+(m.away.Jerry?1:0);
   const title = withV ? '같이 정해요' : n===4 ? '오늘 근무 · 4명 모두 정해짐 ✓' : m.peter==='sent' ? '오늘 근무 · 대답 기다리는 중' : n ? `오늘 근무 · ${n}명 정해짐` : '오늘 근무 · 아직 미정';
   const blink = schedWait() && m.peter==='none';
+  const focusMe = m.peter==='ok' && !m.me;   // Peter 가 정해지면 다음은 내 시간표: '정하기'만 또렷하게
   const meRow = m.me ? `<div class="mgrow set"><span><b>Simon (나)</b><small>${mgSub('me',m.me)}</small></span><button class="mgtag ok" data-a="mgEdit" data-v="me">정해짐 ✓</button></div>`
-                     : `<div class="mgrow"><span><b>Simon (나)</b><small>시간 미정 · 역할 미정</small></span><button class="mgbtn" data-a="mgEdit" data-v="me">정하기</button></div>`;
+                     : `<div class="mgrow merow"><span><b>Simon (나)</b><small>시간 미정 · 역할 미정</small></span><button class="mgbtn${focusMe?' blink':''}" data-a="mgEdit" data-v="me">정하기</button></div>`;
   const ptRow = m.peter==='ok' ? `<div class="mgrow set"><span><b>Peter</b><small>${mgSub('peter',m.peterRows)}</small></span><span class="mgtag ok">정해짐 ✓</span></div>`
               : m.peter==='sent' ? `<div class="mgrow wait"><span><b>Peter</b><small>제안 보냄 · 06:00 – 11:00</small></span><span class="mgtag">대답 기다리는 중</span></div>`
               : `<div class="mgrow"><span><b>Peter</b><small>시간 미정 · 역할 미정</small></span><button class="mgbtn${blink?' blink':''}" data-a="mgEdit" data-v="peter">${withV?'정하기':'제안 보내기'}</button></div>`;
@@ -1376,7 +1382,7 @@ function mgHomeView(){
       <div class="mgpoptt">${m.peterRows.map((r,i)=>`<span class="${r==='휴게'?'brk':''}"><i>${MG_HOURS[i].slice(0,2)}</i>${r}</span>`).join('')}</div>
       <button class="prim blink" data-a="mgPopSend">Peter에게 제안 보내기</button>
       <div class="two"><button class="ghost" data-a="mgEdit" data-v="peter">고쳐서 보내기</button><button class="ghost" data-a="mgPopNo">나중에</button></div></div></div>` : '';
-  return `${mgHead()}<div class="mg"><div class="mgseg"><button class="${withV?'':'on'}" data-a="mgView" data-v="solo">혼자 보기</button><button class="${withV?'on':''}" data-a="mgView" data-v="with">파트너와 함께 보기</button></div>
+  return `${mgHead(focusMe)}<div class="mg${focusMe?' focusme':''}"><div class="mgseg"><button class="${withV?'':'on'}" data-a="mgView" data-v="solo">혼자 보기</button><button class="${withV?'on':''}" data-a="mgView" data-v="with">파트너와 함께 보기</button></div>
     <div class="mgh"><b>${title}</b>${withV?'':`<button data-a="mgMember">멤버 관리 ›</button>`}</div>
     <div class="mgscroll">
       <div class="mgcard${withV?' mgbig':''}"><div class="mgch"><b>${withV?'지금 정할 사람':'지금 매장에 있는 사람'}</b><span>2명${n>=2&&m.me&&m.peter==='ok'?' · 모두 정해짐':''}</span></div>${meRow}${ptRow}</div>
@@ -2369,7 +2375,7 @@ const Sched = (()=>{
   const el = id => document.getElementById(id);
   function paint(){
     const b=el('schedBtn'), n=el('schedNote'), g=el('schedGrp'); if(!b) return;
-    if(g) g.hidden = !IS_CS;                       // CS(아이패드) 쪽 조작판에만
+    if(g) g.hidden = true;                         // 시간표는 매니저 화면에서 보내므로 조작판에서는 숨김
     const ready = Peer.on && wait;
     b.disabled = !ready; b.classList.toggle('blink', ready);
     if(n) n.textContent = !Peer.on ? '휴대폰과 연결되면 쓸 수 있어요.' : ready ? '휴대폰이 ‘역할을 정하는 중’ 화면에서 기다리고 있어요. 눌러서 시간표를 보내 주세요.' : '휴대폰이 ‘역할을 정하는 중’ 화면에 오면 단추가 깜박여요.';
@@ -2541,7 +2547,7 @@ const Intro = (()=>{
   function paint(){
     const pages=seq(), p = pages[i], last = mode && i===pages.length-1;
     el.innerHTML = `<div class="ivic" role="dialog" aria-modal="true" aria-label="체험 안내"><div class="ivib"><div class="ivart">${art[p.a]}</div><div><p class="ivik">${p.k}</p><h3>${p.h}</h3>${p.b}</div></div>
-      <div class="ivif"><button class="ivskip" data-in="close">${last?'':'건너뛰기'}</button><span class="ivdots">${(mode?pages:[P0,0,0]).map((_,n)=>`<span class="${n===i?'on':''}"></span>`).join('')}</span>${i?`<button data-in="prev">이전</button>`:''}${i?`<button class="ivgo" data-in="${last?'close':'next'}">${last?'체험 시작하기':'다음'}</button>`:''}</div></div>`;
+      <div class="ivif">${mode?`<button class="ivskip" data-in="close">${last?'':'건너뛰기'}</button>`:''}<span class="ivdots">${(mode?pages:[P0,0,0]).map((_,n)=>`<span class="${n===i?'on':''}"></span>`).join('')}</span>${i?`<button data-in="prev">이전</button>`:''}${i?`<button class="ivgo" data-in="${last?'close':'next'}">${last?'체험 시작하기':'다음'}</button>`:''}</div></div>`;
   }
   el.addEventListener('click', e=>{ const b=e.target.closest('[data-in]'); if(!b) return; const k=b.dataset.in;
     if(k==='solo'||k==='duo'){ mode=k; EXP_MODE=k; i=1; if(k==='solo' && typeof Target!=='undefined') Target.set('self'); }
