@@ -630,6 +630,17 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .mge .b.brk{background:var(--lav);border-color:var(--lav);color:var(--purple);font-size:calc(12.5px * var(--fsz,1))}
 .mge .b.brk.on{background:var(--purple);border-color:var(--purple);color:#fff}
 .mge .b.brk.oth{background:#cfe9ec;border-color:#cfe9ec;color:#1f6f78}
+.mgpop{position:absolute;inset:0;z-index:30;background:rgba(38,48,42,.5);display:flex;align-items:center;justify-content:center;padding:22px;animation:fadein .2s ease}
+.mgpopc{width:100%;background:var(--card);border-radius:28px;padding:22px 18px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 40px rgba(0,0,0,.3);animation:popup .25s ease}
+.mgpopc>small{font-size:calc(13px * var(--fsz,1));font-weight:700;color:var(--pri)}
+.mgpopc>b{font-size:calc(22px * var(--fsz,1));font-weight:800;line-height:1.25;margin-top:-6px}
+.mgpoptt{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mgpoptt span{background:#cfe9ec;color:#1f6f78;border-radius:12px;padding:7px 0;text-align:center;font-size:calc(14px * var(--fsz,1));font-weight:800}
+.mgpoptt span.brk{background:var(--purple);color:#fff}
+.mgpoptt i{display:block;font-style:normal;font-size:calc(11px * var(--fsz,1));font-weight:600;opacity:.8}
+.mgpopc .prim{height:58px;border-radius:29px;font-size:calc(18px * var(--fsz,1))}
+.mgpopc .prim.blink{animation:schedbl 1s ease-in-out infinite}
+.mgpopc .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mgrole{align-self:center;background:var(--pri);color:#fff;font-size:calc(30px * var(--fsz,1));font-weight:800;border-radius:32px;padding:8px 34px}
 .mg3{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px}
 .mg3 span{background:var(--row);border-radius:14px;padding:8px 4px;text-align:center}
@@ -703,7 +714,6 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
       <h2>모자 클립 · Peter</h2>
       <div class="hat"><span>모자 챙 안쪽</span><div class="led" id="ledL">왼</div><div class="led" id="ledR">오</div></div>
       <div class="cliptxt" id="clipTxt">꺼짐</div>
-      <p class="note" id="hatNote">Simon(CS)은 내 왼쪽, Lila(POS)는 내 오른쪽에 있다고 보고 보낸 사람 쪽 불이 켜져요. 위험·손님 호출·그룹 대화는 양쪽이 켜져요. 빛은 정해진 횟수만 깜박이고 꺼져요 (빠름 8번 · 느림 5번 · 켜짐 5초 · 위험 13번). 더 급한 신호가 오면 그 빛이 먼저 나오고, 밀린 신호는 멈춰 있다가 급한 신호가 해결된 뒤 남은 횟수만큼 이어서 깜박여요. 대답·확인을 요구하는 빛(빠름·켜짐)은 그 전에라도 내가 답하거나 확인하면 바로 꺼져요. 자세한 내용은 앱 화면에 남아요.</p>
     </section>
     <section class="box" id="realbox">
       <h2 id="realH">실제 클립 연결</h2>
@@ -1163,7 +1173,7 @@ const Peer = (() => {
         if(!waitingSched()){ send({t:'schedRes',r:'no'}); return; }
         if(Array.isArray(m.rows) && m.rows.length){ S.prop.rows=m.rows.map(x=>({...x})); S.prop.orig=m.rows.map(x=>({...x})); }
         S.propIn=true; sig('prop','green','fast','L','pers'); setMsg('Simon 매니저가 시간표를 제안했어요','say'); log('[아이패드] Simon 매니저가 시간표를 보냄'); render(); return; }
-      case 'schedRes': { mgPeerRes(m); const t = m.r==='ok' ? '휴대폰: 시간표 좋아요' : m.r==='chg' ? `휴대폰이 시간표를 바꿔 보냈어요 (${m.rows||''})` : '휴대폰이 아직 역할 정하는 화면이 아니라서 Simon의 대답은 대신 처리했어요'; log(t); alert2(t); return; }
+      case 'schedRes': { mgPeerRes(m); const t = m.r==='ok' ? '휴대폰: 시간표 좋아요' : m.r==='chg' ? `휴대폰이 시간표를 바꿔 보냈어요 (${m.rows||''})` : (EXP_MODE==='duo' ? '아이폰이 ‘역할을 정하는 중’ 화면에 오면 시간표가 전달돼요' : '휴대폰이 아직 역할 정하는 화면이 아니라서 Simon의 대답은 대신 처리했어요'); log(t); alert2(t); return; }
       case 'demo': {   // 상대 기기의 조작판이 보낸 상황
         const ok = m.k==='reset' || S.screen==='main';
         log(`[조작판 · ${roleOf}] 상황 받음: ${m.label||m.k}${ok?'':' (아직 로그인 전이라 실행하지 못함)'}`);
@@ -1332,6 +1342,7 @@ const MG_DEF = {
   Lila:  {start:'08:00', end:'13:00', note:'08:00 출근 예정', rows:[null,null,'POS','BAR','POS','휴게','POS']},
   Jerry: {start:'09:30', end:'16:30', note:'09:30 출근 예정 · 매니저', rows:[null,null,null,'CS','BAR','POS','BAR']},
 };
+let EXP_MODE=null;   // 안내에서 고른 체험 방식: 'solo' | 'duo' | null
 function schedWait(){ try{ return !!Sched.waiting; }catch(e){ return false; } }   // Sched 는 아래에서 만들어짐
 const mgFresh = () => ({view:'solo', me:null, peter:'none', peterRows:MG_DEF.peter.rows.slice(), away:{Lila:false,Jerry:false}, edit:null, draft:null});
 const mgBrk = rows => { const i=rows.indexOf('휴게'); return i<0 ? null : MG_HOURS[i]; };
@@ -1360,6 +1371,11 @@ function mgHomeView(){
   const aw = k => m.away[k] ? `<div class="mgrow rnd"><span><b>${k}${k==='Jerry'?' · 매니저':''}</b><small>${mgSub(k,MG_DEF[k].rows)}</small></span><button class="mgtag rnd" data-a="mgRand" data-v="${k}">임의 배정됨 ✓</button></div>`
                          : `<div class="mgrow away"><span><b>${k}</b><small>${MG_DEF[k].note}</small></span><button class="mgbtn" data-a="mgRand" data-v="${k}"${withV?' disabled':''}>임의 배정</button></div>`;
   const ready = m.me && m.peter==='ok';
+  // 아이폰이 시간표를 기다리면: 누르기 쉬운 팝업으로 '제안 보내기'
+  const pop = (blink && !m.popNo && !withV) ? `<div class="mgpop"><div class="mgpopc"><small>아이폰의 Peter가 기다리고 있어요</small><b>Peter에게 시간표를 보낼까요?</b>
+      <div class="mgpoptt">${m.peterRows.map((r,i)=>`<span class="${r==='휴게'?'brk':''}"><i>${MG_HOURS[i].slice(0,2)}</i>${r}</span>`).join('')}</div>
+      <button class="prim blink" data-a="mgPopSend">Peter에게 제안 보내기</button>
+      <div class="two"><button class="ghost" data-a="mgEdit" data-v="peter">고쳐서 보내기</button><button class="ghost" data-a="mgPopNo">나중에</button></div></div></div>` : '';
   return `${mgHead()}<div class="mg"><div class="mgseg"><button class="${withV?'':'on'}" data-a="mgView" data-v="solo">혼자 보기</button><button class="${withV?'on':''}" data-a="mgView" data-v="with">파트너와 함께 보기</button></div>
     <div class="mgh"><b>${title}</b>${withV?'':`<button data-a="mgMember">멤버 관리 ›</button>`}</div>
     <div class="mgscroll">
@@ -1367,7 +1383,7 @@ function mgHomeView(){
       <div class="mgcard"><div class="mgch"><b>아직 출근 전</b><span>2명${m.away.Lila&&m.away.Jerry?' · 모두 임의 배정됨':''}</span></div>${aw('Lila')}${aw('Jerry')}</div>
       <div class="mgcard"><div class="mgch"><b>오늘 시간표${m.peter==='sent'?' · Peter 대답 전':n===4?' · 4명 채워짐':''}</b><button data-a="mgBig">크게 보기 ›</button></div>${mgGrid()}</div>
     </div>
-    <div class="mgbot"><button class="prim" data-a="mgStart"${ready?'':' disabled'}>정한 내용으로 내 역할 시작 ›</button></div></div>`;
+    <div class="mgbot"><button class="prim" data-a="mgStart"${ready?'':' disabled'}>정한 내용으로 내 역할 시작 ›</button></div></div>${pop}`;
 }
 function mgEditView(){
   const m=S.mgr, who=m.edit, d=MG_DEF[who], rows=m.draft, hours=MG_HOURS.slice(0,rows.length);
@@ -1400,9 +1416,10 @@ function mgSendPeter(direct){
   else if(!direct){ log(NM('Peter에게 시간표 제안 (휴대폰 연결 없음 · 잠시 뒤 대답)')); later(2600,()=>{ if(S.mgr.peter==='sent'){ S.mgr.peter='ok'; if(/^m(Home|Edit|Go)$/.test(S.screen)) render(); } }); }
   if(/^m(Home|Edit|Go)$/.test(S.screen)) render();
 }
+function mgResend(){ const m=S.mgr; if(m.peter!=='sent' || !Peer.on) return; Peer.send({t:'sched',rows:m.peterRows.map((r,i)=> r==='휴게' ? {h:MG_HOURS[i],r:'휴게',b:1} : {h:MG_HOURS[i],r})}); log(NM('→ 기다리던 Peter에게 시간표 전달')); }
 function mgPeerRes(m){   // 휴대폰의 대답
   const g=S.mgr;
-  if(m.r==='no'){ if(g.peter==='sent') later(1800,()=>{ if(S.mgr.peter==='sent'){ S.mgr.peter='ok'; if(/^m(Home|Edit|Go)$/.test(S.screen)) render(); } }); }   // 휴대폰이 아직 그 화면이 아니면 혼자 체험으로 보고 대답을 대신 처리
+  if(m.r==='no'){ if(g.peter==='sent' && EXP_MODE!=='duo') later(1800,()=>{ if(S.mgr.peter==='sent'){ S.mgr.peter='ok'; if(/^m(Home|Edit|Go)$/.test(S.screen)) render(); } }); }   // 휴대폰이 아직 그 화면이 아니면 혼자 체험으로 보고 대답을 대신 처리
   else { g.peter='ok'; if(m.r==='chg' && Array.isArray(m.full)) g.peterRows=m.full.map(x=>x.b?'휴게':x.r); }
   if(/^m(Home|Edit|Go)$/.test(S.screen)) render();
 }
@@ -1410,6 +1427,8 @@ function mgAct(a,v){
   const m=S.mgr;
   switch(a){
     case 'mgView': m.view=v; break;
+    case 'mgPopSend': mgSendPeter(false); return true;
+    case 'mgPopNo': m.popNo=true; break;
     case 'mgMember': toast('멤버 관리는 이 시연에 없어요'); return true;
     case 'mgBig': toast('가로로 크게 보기는 이 시연에 없어요'); return true;
     case 'mgEdit': if(v==='peter' && m.peter!=='none') return true; m.edit=v; m.draft=(v==='me' ? (m.me||MG_DEF.me.rows) : m.peterRows).slice(); S.screen='mEdit'; break;
@@ -2355,7 +2374,7 @@ const Sched = (()=>{
     b.disabled = !ready; b.classList.toggle('blink', ready);
     if(n) n.textContent = !Peer.on ? '휴대폰과 연결되면 쓸 수 있어요.' : ready ? '휴대폰이 ‘역할을 정하는 중’ 화면에서 기다리고 있어요. 눌러서 시간표를 보내 주세요.' : '휴대폰이 ‘역할을 정하는 중’ 화면에 오면 단추가 깜박여요.';
   }
-  function peerWait(v){ if(v!==wait){ wait=v; paint(); if(typeof S!=='undefined' && S && S.screen==='mHome') render(); } }
+  function peerWait(v){ if(v!==wait){ wait=v; if(v && typeof S!=='undefined' && S && S.mgr){ S.mgr.popNo=false; mgResend(); } paint(); if(typeof S!=='undefined' && S && S.screen==='mHome') render(); } }
   document.addEventListener('click', e=>{ const b=e.target.closest('#schedBtn'); if(!b || b.disabled) return;
     wait=false; mgSendPeter(false); paint(); });
   setInterval(paint, 2000);
@@ -2505,7 +2524,7 @@ const Intro = (()=>{
     ${li(4,`왼쪽 화면에서 요청에 <b>‘가져갈게요’</b>로 답하고, ${me} 사이클의 할 일을 눌러 체크해 보세요.`)}</ol><p class="ivnote">혼자일 때는 아이폰을 쓰지 않아도 돼요.</p>`};
   const DUO1 = {a:1, k:'둘이서 체험하기 · 아이패드', h:`한 분은 아이패드에서 ${padWho}`, b:`<ol>
     ${li(1,`왼쪽 화면에서 ‘시연용 사번 넣기’ → ‘로그인’ → <b>‘매니저’</b>를 골라요.`)}
-    ${li(2,`아이폰이 ‘역할을 정하는 중’에서 기다리면 ${phMe} 옆 <b>‘제안 보내기’</b>가 깜박여요. 눌러서 시간표를 보내 주세요.`)}
+    ${li(2,`아이폰이 ‘역할을 정하는 중’에서 기다리면 아이패드에 팝업이 떠요. <b>‘${phMe}에게 제안 보내기’</b>를 누르면 아이폰에 시간표가 나타나요.`)}
     ${li(3,`<b>내 시간표</b>도 정하고 ‘정한 내용으로 내 역할 시작’을 눌러 ${me} 화면으로 들어가요.`)}
     ${li(4,`아이폰에서 요청이 오면 <b>‘가져갈게요’</b>로 답해요. ‘상황 만들기’ 맨 위를 <b>‘휴대폰 (${other})’</b>로 바꾸면 아이폰에 주문 같은 상황도 보낼 수 있어요.`)}</ol>`};
   const DUO2 = {a:2, k:'둘이서 체험하기 · 아이폰', h:`다른 한 분은 아이폰에서 ${phWho}`, b:`<ol>
@@ -2525,10 +2544,10 @@ const Intro = (()=>{
       <div class="ivif"><button class="ivskip" data-in="close">${last?'':'건너뛰기'}</button><span class="ivdots">${(mode?pages:[P0,0,0]).map((_,n)=>`<span class="${n===i?'on':''}"></span>`).join('')}</span>${i?`<button data-in="prev">이전</button>`:''}${i?`<button class="ivgo" data-in="${last?'close':'next'}">${last?'체험 시작하기':'다음'}</button>`:''}</div></div>`;
   }
   el.addEventListener('click', e=>{ const b=e.target.closest('[data-in]'); if(!b) return; const k=b.dataset.in;
-    if(k==='solo'||k==='duo'){ mode=k; i=1; if(k==='solo' && typeof Target!=='undefined') Target.set('self'); }
+    if(k==='solo'||k==='duo'){ mode=k; EXP_MODE=k; i=1; if(k==='solo' && typeof Target!=='undefined') Target.set('self'); }
     else if(k==='next') i=Math.min(i+1,seq().length-1); else if(k==='prev'){ i=Math.max(i-1,0); if(i===0) mode=null; } else return close();
     paint(); });
-  function open(){ i=0; mode=null; paint(); el.hidden=false; }
+  function open(){ i=0; mode=null; EXP_MODE=null; paint(); el.hidden=false; }
   function close(){ el.hidden=true; el.innerHTML=''; }
   document.getElementById('introBtn').addEventListener('click', open);
   return {open, close};
