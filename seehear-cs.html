@@ -536,6 +536,7 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .hatd .arc{height:110px;background:var(--pri);border-radius:110px 110px 0 0;position:relative;display:flex;align-items:center;justify-content:center;gap:16px;margin-top:6px}
 .hatd .arc span{background:#1e2c23;color:#cfe0d2;font-size:calc(11px * var(--fsz,1));padding:6px 26px;border-radius:6px}
 .hatd .arc button{width:38px;height:38px;border-radius:50%;background:#f4efd8;font-size:calc(12px * var(--fsz,1));font-weight:700;box-shadow:0 0 12px 4px rgba(255,240,180,.6)}
+#ctx:focus::placeholder{color:transparent;-webkit-text-fill-color:transparent}
 .tt{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .tt div{background:var(--card);border-radius:10px;text-align:center;font-size:calc(10px * var(--fsz,1));color:var(--sub);padding:5px 0}
 .tt div b{display:block;font-size:calc(13px * var(--fsz,1));color:var(--ink)}
@@ -569,6 +570,59 @@ h4{margin:0;font-size:calc(17px * var(--fsz,1));font-weight:700;display:flex;ali
 .err{font-size:calc(12px * var(--fsz,1));color:#fff;background:var(--red);border-radius:10px;padding:4px 10px}
 .rolepick{background:linear-gradient(180deg,#fff 0%,#c9c9c9 100%);justify-content:center}
 .rpwrap{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:8px}
+/* 매니저 모드 */
+.mg{position:absolute;inset:0;padding:138px 22px 0;display:flex;flex-direction:column;gap:10px}
+.mgseg{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border-radius:24px;padding:4px;flex:none}
+.mgseg button{height:40px;border-radius:20px;font-size:calc(14px * var(--fsz,1));font-weight:700;color:var(--sub)}
+.mgseg button.on{background:var(--ink);color:#fff}
+.mgh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none;padding:0 4px}
+.mgh b{font-size:calc(22px * var(--fsz,1));font-weight:800;letter-spacing:-.01em}
+.mgh button{font-size:calc(12px * var(--fsz,1));font-weight:600;color:var(--ink);white-space:nowrap;padding:6px 0}
+.mgscroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:none;display:flex;flex-direction:column;gap:12px;margin:0 -22px;padding:2px 22px 12px}
+.mgbot{flex:none;padding:8px 0 calc(22px + var(--safeB,0px))}
+.mgbot .prim{height:56px;border-radius:28px;font-size:calc(17px * var(--fsz,1))}
+.mgbot .prim:disabled{background:#d9dfd8;color:#8f9a92}
+.mgcard{background:var(--card);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:8px;flex:none}
+.mgcard.now{border:2px solid var(--ink);align-items:stretch;gap:10px;padding:18px 14px}
+.mgch{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 2px}
+.mgch b{font-size:calc(15px * var(--fsz,1));font-weight:700}
+.mgch>span,.mgch>button{font-size:calc(12px * var(--fsz,1));font-weight:700;color:var(--ink)}
+.mgrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--row);border-radius:16px;padding:9px 10px 9px 14px;min-height:60px;border:2px solid transparent}
+.mgrow b{display:block;font-size:calc(17px * var(--fsz,1));font-weight:700;line-height:1.2}
+.mgrow small{display:block;font-size:calc(11.5px * var(--fsz,1));color:var(--sub);margin-top:2px}
+.mgrow>small{text-align:right;margin:0}
+.mgrow.set{background:var(--card);border-color:#2f7f86}
+.mgrow.wait,.mgrow.away{background:var(--card);border:1.5px dashed var(--ink)}
+.mgrow.away b{color:var(--sub);font-weight:600}
+.mgrow.rnd{background:var(--card);border-color:#e8bd4a}.mgrow.rnd b{color:var(--sub);font-weight:600}
+.mgcard.mgbig .mgrow{min-height:86px}.mgcard.mgbig .mgrow b{font-size:calc(22px * var(--fsz,1))}.mgcard.mgbig .mgrow small{font-size:calc(14px * var(--fsz,1))}.mgcard.mgbig .mgbtn{height:56px;border-radius:28px;font-size:calc(17px * var(--fsz,1));padding:0 20px}
+.mgbtn{flex:none;height:42px;border-radius:21px;background:var(--ink);color:#fff;font-size:calc(14px * var(--fsz,1));font-weight:700;padding:0 16px;white-space:nowrap}
+.mgbtn:disabled{background:#d9dfd8;color:#8f9a92}
+.mgbtn.blink{background:var(--pri);animation:schedbl 1s ease-in-out infinite}
+.mgtag{flex:none;height:38px;border-radius:19px;background:var(--row);color:var(--sub);font-size:calc(13px * var(--fsz,1));font-weight:700;padding:0 14px;display:inline-flex;align-items:center;white-space:nowrap}
+.mgtag.ok{background:#cfe9ec;color:#1f6f78}.mgtag.rnd{background:var(--yel);color:#6b5200}
+.mgtt{display:grid;gap:4px 3px;align-items:center}
+.mgtt .n{font-size:calc(11.5px * var(--fsz,1));font-weight:700}
+.mgtt .hh{font-size:calc(11px * var(--fsz,1));font-weight:700;text-align:center}
+.mgtt .c{height:22px;border-radius:7px;display:grid;place-items:center;font-size:calc(9.5px * var(--fsz,1));font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+.mgtt .c.emp{border:1px dashed var(--ink);color:var(--sub);font-weight:500}
+.mgtt .c.me{background:var(--ink);color:#fff}.mgtt .c.pt{background:#cfe9ec;color:#1f6f78}.mgtt .c.pt.wait{background:none;color:#1f6f78}.mgtt .c.aw{background:var(--yel);color:#6b5200}.mgtt .c.brk{background:var(--purple);color:#fff}
+.mgleg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:calc(11px * var(--fsz,1));font-weight:700;margin-top:4px}
+.mgleg span{display:inline-flex;align-items:center;gap:4px}.mgleg i{width:9px;height:9px;border-radius:3px;display:block}
+.mg .edge{background:var(--row);border-radius:10px;padding:6px 12px;font-size:calc(12.5px * var(--fsz,1));font-weight:700}
+.mge{display:grid;grid-template-columns:46px repeat(4,1fr);gap:8px 6px;align-items:center}
+.mge .h{font-size:calc(14px * var(--fsz,1));font-weight:700}
+.mge .b{height:44px;border-radius:13px;border:1.5px solid var(--ink);background:var(--card);font-size:calc(13.5px * var(--fsz,1));font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;white-space:nowrap}
+.mge .b small{font-size:calc(9.5px * var(--fsz,1));font-weight:700}
+.mge .b.on{background:var(--ink);color:#fff}
+.mge .b.oth{background:#cfe9ec;border-color:#cfe9ec;color:#1f6f78}
+.mge .b.brk{background:var(--lav);border-color:var(--lav);color:var(--purple);font-size:calc(12.5px * var(--fsz,1))}
+.mge .b.brk.on{background:var(--purple);border-color:var(--purple);color:#fff}
+.mge .b.brk.oth{background:#cfe9ec;border-color:#cfe9ec;color:#1f6f78}
+.mgrole{align-self:center;background:var(--pri);color:#fff;font-size:calc(30px * var(--fsz,1));font-weight:800;border-radius:32px;padding:8px 34px}
+.mg3{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px}
+.mg3 span{background:var(--row);border-radius:14px;padding:8px 4px;text-align:center}
+.mg3 small{display:block;font-size:calc(11px * var(--fsz,1));color:var(--sub)}.mg3 b{font-size:calc(16px * var(--fsz,1));font-weight:700;white-space:nowrap}
 .rp{height:76px;border-radius:38px;background:#fff;border:2px solid var(--ink);color:var(--ink);font-size:calc(24px * var(--fsz,1));font-weight:800;letter-spacing:-.01em;display:grid;place-items:center;width:100%;box-sizing:border-box;transition:transform .12s,background .12s,color .12s}
 .rp:active{transform:scale(.98);background:var(--ink);color:#fff}
 .ttl{font-size:calc(19px * var(--fsz,1));font-weight:700;margin:0}
@@ -777,7 +831,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(IS_CS) document.title='SeeHear CS';
 });
 const RC = IS_CS
-  ? {role:'CS',  startMin:10*60, sceneMin:10*60+10, shiftMin:10*60+55, partners:{Simon:'BAR',Lila:'POS',Tom:'CS',Jerry:'매니저'}, handTo:'Simon', handWhen:'11:00 퇴근', simonSide:'BAR · 내 왼쪽'}
+  ? {role:'CS',  startMin:8*60, sceneMin:8*60+10, shiftMin:8*60+55, partners:{Simon:'BAR',Lila:'POS',Tom:'CS',Jerry:'매니저'}, handTo:'Lila', handWhen:'09:00 교대', simonSide:'BAR · 내 왼쪽'}
   : {role:'BAR', startMin:6*60,  sceneMin:8*60+10,  shiftMin:8*60+55,  partners:{Simon:'CS',Lila:'POS',Tom:'CS',Jerry:'매니저'},  handTo:'Lila',  handWhen:'09:00 교대', simonSide:'CS · 내 왼쪽'};
 /* CS 사이클 — 시나리오에서 정한 순서 */
 const CS_CYCLE = [
@@ -796,7 +850,8 @@ function fresh(){
     orders:[], done:[], nextNo:1, showDone:false,
     ing: JSON.parse(JSON.stringify(DEF_ING)), sup:[...DEF_SUP],
     req:null, danger:null, ho:{stage:'none', step:2, labels:{}, note:''}, onBreak:false, breakDone:false,
-    cs:{phase:0, done:{}, round:1, last:null, reqs:[]},   // 처음에는 사이클을 아직 돌지 않은 상태
+    cs:{phase:0, done:{}, round:1, last:null, reqs:[]},
+    mgr:mgFresh(),   // 처음에는 사이클을 아직 돌지 않은 상태
     alarms:[], machinesOn:['COFFEE 1'],
     signals:[], dots:{group:false,pers:false,alarm:false},
     group:[{id:1,from:'Simon',type:'text',v:'우유 입고가 10시로 바뀌었어요',t:'8:02'}],
@@ -1094,8 +1149,9 @@ const Peer = (() => {
       case 'waitSched': log(`휴대폰(${roleOf})이 역할을 기다리고 있어요 → ‘시간표 보내기’를 눌러 주세요`); return;
       case 'sched': {   // 아이패드(매니저 Simon)가 보낸 시간표
         if(!waitingSched()){ send({t:'schedRes',r:'no'}); return; }
+        if(Array.isArray(m.rows) && m.rows.length){ S.prop.rows=m.rows.map(x=>({...x})); S.prop.orig=m.rows.map(x=>({...x})); }
         S.propIn=true; sig('prop','green','fast','L','pers'); setMsg('Simon 매니저가 시간표를 제안했어요','say'); log('[아이패드] Simon 매니저가 시간표를 보냄'); render(); return; }
-      case 'schedRes': { const t = m.r==='ok' ? '휴대폰: 시간표 좋아요' : m.r==='chg' ? `휴대폰이 시간표를 바꿔 보냈어요 (${m.rows||''})` : '휴대폰이 아직 역할 정하는 화면이 아니에요'; log(t); alert2(t); return; }
+      case 'schedRes': { mgPeerRes(m); const t = m.r==='ok' ? '휴대폰: 시간표 좋아요' : m.r==='chg' ? `휴대폰이 시간표를 바꿔 보냈어요 (${m.rows||''})` : '휴대폰이 아직 역할 정하는 화면이 아니라서 Simon의 대답은 대신 처리했어요'; log(t); alert2(t); return; }
       case 'demo': {   // 상대 기기의 조작판이 보낸 상황
         const ok = m.k==='reset' || S.screen==='main';
         log(`[조작판 · ${roleOf}] 상황 받음: ${m.label||m.k}${ok?'':' (아직 로그인 전이라 실행하지 못함)'}`);
@@ -1155,12 +1211,13 @@ const PERSON = IC.pers.replace('<svg','<svg width="30" height="44" style="displa
 
 /* ───── 렌더 ───── */
 function statusBar(){ return `<div class="sb"><span>${hhmm(S.min)}</span><i style="color:var(--ink)">${IC.stat.replace('<svg','<svg width="85" height="13"')}</i></div>`; }
+const END = () => (IS_CS && S.mgr && S.mgr.me) ? '13:00' : '11:00';
 function chips(roleLabel='BAR', brk='09:00'){
   return `<div class="chips${S.roleMenu?' fade':''}" id="chips">
     <button class="chip role" data-a="roleMenu">${ic(roleLabel==='CS'?'cup':'barista',18,'#fff')}${roleLabel}</button>
     <div class="chip">${ic('sun',18)}출근 06:00</div>
     <div class="chip">${ic('cup',18)}휴식 ${brk}</div>
-    <div class="chip">${ic('exit',18)}퇴근 11:00</div></div>
+    <div class="chip">${ic('exit',18)}퇴근 ${END()}</div></div>
     ${S.roleMenu?`<div class="shade" data-a="roleClose"></div><div class="rolemenu">${['CS','POS','BAR'].filter(x=>x!==RC.role).map(x=>`<button data-a="roleInfo">${x}</button>`).join('')}</div>`:''}`;
 }
 function msgBar(){ const m=S.msg; return m&&m.to ? `<button class="msg ${m.kind}" data-a="msgGo" style="cursor:pointer">${esc(m.text)} ›</button>` : `<div class="msg ${m?m.kind:''}">${m?esc(m.text):'중요한 메시지가 없습니다.'}</div>`; }
@@ -1188,7 +1245,7 @@ function render(){
   if(S.screen==='main' && S.tab==='card') P.dataset.cc=S.card.color; else delete P.dataset.cc;
   const sc = S.screen;
   const key0=[sc,S.tab,S.view,S.set.page,S.chatWith,S.card.menu&&'cm:'+S.card.menu,S.sheet&&S.sheet.k,S.land,S.onBreak,S.call&&S.call.st,S.propIn,S.prop.edit].join('|');
-  const bodySig = JSON.stringify([S.orders,S.done,S.showDone,S.ing,S.sup,S.req,S.danger,S.ho,S.alarms,S.machinesOn,S.dots,S.group.length,S.reactFor,S.compose,S.emoSel,S.chats[S.chatWith||'Simon'].length,S.card,S.set,S.prop,S.propSent,S.propIn,S.propDone,S.call&&[S.call.more,S.call.stt,S.call.tts],S.theme,S.fsz,(S.tab==='alarm'||S.set.page==='clip'||S.screen==='clipLink')?S.clipWord:'',S.clipErr,Clip.on,S.cs,Peer.code,Peer.state]);
+  const bodySig = JSON.stringify([S.orders,S.done,S.showDone,S.ing,S.sup,S.req,S.danger,S.ho,S.alarms,S.machinesOn,S.dots,S.group.length,S.reactFor,S.compose,S.emoSel,S.chats[S.chatWith||'Simon'].length,S.card,S.set,S.prop,S.propSent,S.propIn,S.propDone,S.call&&[S.call.more,S.call.stt,S.call.tts],S.theme,S.fsz,(S.tab==='alarm'||S.set.page==='clip'||S.screen==='clipLink')?S.clipWord:'',S.clipErr,Clip.on,S.cs,Peer.code,Peer.state,S.mgr,schedWait()]);
   if(key0===S.lastKey && bodySig===S.lastBody && P.querySelector('.msg')){ msgOnly(); return; }
   S.lastBody=bodySig;
   let h = '';
@@ -1196,12 +1253,15 @@ function render(){
   else if(sc==='teamLink') h = teamLinkView();
   else if(sc==='clipLink') h = clipLinkView();
   else if(sc==='rolepick') h = rolePickView();
+  else if(sc==='mHome') h = mgHomeView();
+  else if(sc==='mEdit') h = mgEditView();
+  else if(sc==='mGo') h = mgGoView();
   else if(sc==='pHome') h = pHomeView();
   else if(sc==='proposal') h = proposalView();
   else if(sc==='goRole') h = goRoleView();
   else if(sc==='offwork') h = offView();
   else if(sc==='main') h = (S.land && !S.tab) ? landView() : mainView();
-  P.innerHTML = NMH(h);
+  P.innerHTML = /^m(Home|Edit|Go)$/.test(sc) ? h : NMH(h);   // 매니저 화면은 이름을 맞바꾸지 않음
   const key=[sc,S.tab,S.view,S.set.page,S.chatWith,S.card.menu&&'cm:'+S.card.menu,S.sheet&&S.sheet.k,S.land,S.onBreak,S.call&&S.call.st,S.propIn,S.prop.edit].map(x=>x==='pers'&&!S.chatWith?null:x).join('|');
   const inCard=k=>/^main\|card\|/.test(k||'');
   P.classList.toggle('incard', inCard(key) && inCard(S.lastKey));
@@ -1250,6 +1310,106 @@ function clipLinkView(){
       ${on?`<button class="back plain" style="align-self:center" data-a="clipOffBtn">연결 끊기</button>`:''}
     </div>
   </div>`;
+}
+/* ───── 매니저 모드 (CS 앱 · 아이패드의 Simon) — 피그마 '매니저 화면' 섹션 기준 ─────
+   이 화면들은 이름을 맞바꾸지 않고 그대로 그림 (render 에서 NMH 를 건너뜀). */
+const MG_HOURS = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00'];
+const MG_DEF = {
+  me:    {start:'06:00', end:'13:00', rows:['POS','BAR','CS','POS','휴게','BAR','BAR']},
+  peter: {start:'06:00', end:'11:00', rows:['BAR','POS','BAR','휴게','CS']},
+  Lila:  {start:'08:00', end:'13:00', note:'08:00 출근 예정', rows:[null,null,'POS','BAR','POS','휴게','POS']},
+  Jerry: {start:'09:30', end:'16:30', note:'09:30 출근 예정 · 매니저', rows:[null,null,null,'CS','BAR','POS','BAR']},
+};
+function schedWait(){ try{ return !!Sched.waiting; }catch(e){ return false; } }   // Sched 는 아래에서 만들어짐
+const mgFresh = () => ({view:'solo', me:null, peter:'none', peterRows:MG_DEF.peter.rows.slice(), away:{Lila:false,Jerry:false}, edit:null, draft:null});
+const mgBrk = rows => { const i=rows.indexOf('휴게'); return i<0 ? null : MG_HOURS[i]; };
+const mgNext = h => { const i=MG_HOURS.indexOf(h); return MG_HOURS[i+1] || '13:00'; };
+const mgSub = (who,rows) => { const d=MG_DEF[who], b=mgBrk(rows); return `${d.start} – ${d.end}${b?` · 휴게 ${b} – ${mgNext(b)}`:''}`; };
+const mgHead = () => `<div class="chips" style="pointer-events:none"><div class="chip role">${ic('barista',18,'#fff')}매니저</div></div>`;
+function mgGrid(){
+  const m=S.mgr, cols = m.view==='with' ? 5 : 7;
+  const line = (name,rows,cls,on) => `<span class="n">${name}</span>${MG_HOURS.slice(0,cols).map((h,i)=>{ const r=rows[i]; if(r===undefined||r===null) return `<span class="c off"></span>`; return on ? `<span class="c ${r==='휴게'?'brk':cls}">${r}</span>` : `<span class="c emp">+</span>`; }).join('')}`;
+  const pr = m.peterRows.concat([null,null]);
+  return `<div class="mgtt" style="grid-template-columns:46px repeat(${cols},1fr)"><span class="n"></span>${MG_HOURS.slice(0,cols).map(h=>`<span class="hh">${h.slice(0,2)}</span>`).join('')}
+    ${line('Simon', m.me||MG_DEF.me.rows, 'me', !!m.me)}${line('Peter', pr, m.peter==='ok'?'pt':'pt wait', m.peter!=='none')}
+    ${line('Lila', MG_DEF.Lila.rows, 'aw', m.away.Lila)}${line('Jerry', MG_DEF.Jerry.rows, 'aw', m.away.Jerry)}</div>
+    ${(m.me||m.peter!=='none'||m.away.Lila||m.away.Jerry)?`<div class="mgleg"><span><i style="background:var(--ink)"></i>Simon</span><span><i style="background:#2f7f86"></i>Peter</span><span><i style="background:var(--yel)"></i>임의 배정</span><span><i style="background:var(--purple)"></i>휴게</span></div>`:''}`;
+}
+function mgHomeView(){
+  const m=S.mgr, withV = m.view==='with';
+  const n = (m.me?1:0)+(m.peter==='ok'?1:0)+(m.away.Lila?1:0)+(m.away.Jerry?1:0);
+  const title = withV ? '같이 정해요' : n===4 ? '오늘 근무 · 4명 모두 정해짐 ✓' : m.peter==='sent' ? '오늘 근무 · 대답 기다리는 중' : n ? `오늘 근무 · ${n}명 정해짐` : '오늘 근무 · 아직 미정';
+  const blink = schedWait() && m.peter==='none';
+  const meRow = m.me ? `<div class="mgrow set"><span><b>Simon (나)</b><small>${mgSub('me',m.me)}</small></span><button class="mgtag ok" data-a="mgEdit" data-v="me">정해짐 ✓</button></div>`
+                     : `<div class="mgrow"><span><b>Simon (나)</b><small>시간 미정 · 역할 미정</small></span><button class="mgbtn" data-a="mgEdit" data-v="me">정하기</button></div>`;
+  const ptRow = m.peter==='ok' ? `<div class="mgrow set"><span><b>Peter</b><small>${mgSub('peter',m.peterRows)}</small></span><span class="mgtag ok">정해짐 ✓</span></div>`
+              : m.peter==='sent' ? `<div class="mgrow wait"><span><b>Peter</b><small>제안 보냄 · 06:00 – 11:00</small></span><span class="mgtag">대답 기다리는 중</span></div>`
+              : `<div class="mgrow"><span><b>Peter</b><small>시간 미정 · 역할 미정</small></span><button class="mgbtn${blink?' blink':''}" data-a="mgEdit" data-v="peter">${withV?'정하기':'제안 보내기'}</button></div>`;
+  const aw = k => m.away[k] ? `<div class="mgrow rnd"><span><b>${k}${k==='Jerry'?' · 매니저':''}</b><small>${mgSub(k,MG_DEF[k].rows)}</small></span><button class="mgtag rnd" data-a="mgRand" data-v="${k}">임의 배정됨 ✓</button></div>`
+                         : `<div class="mgrow away"><span><b>${k}</b><small>${MG_DEF[k].note}</small></span><button class="mgbtn" data-a="mgRand" data-v="${k}"${withV?' disabled':''}>임의 배정</button></div>`;
+  const ready = m.me && m.peter==='ok';
+  return `${mgHead()}<div class="mg"><div class="mgseg"><button class="${withV?'':'on'}" data-a="mgView" data-v="solo">혼자 보기</button><button class="${withV?'on':''}" data-a="mgView" data-v="with">파트너와 함께 보기</button></div>
+    <div class="mgh"><b>${title}</b>${withV?'':`<button data-a="mgMember">멤버 관리 ›</button>`}</div>
+    <div class="mgscroll">
+      <div class="mgcard${withV?' mgbig':''}"><div class="mgch"><b>${withV?'지금 정할 사람':'지금 매장에 있는 사람'}</b><span>2명${n>=2&&m.me&&m.peter==='ok'?' · 모두 정해짐':''}</span></div>${meRow}${ptRow}</div>
+      <div class="mgcard"><div class="mgch"><b>아직 출근 전</b><span>2명${m.away.Lila&&m.away.Jerry?' · 모두 임의 배정됨':''}</span></div>${aw('Lila')}${aw('Jerry')}</div>
+      <div class="mgcard"><div class="mgch"><b>오늘 시간표${m.peter==='sent'?' · Peter 대답 전':n===4?' · 4명 채워짐':''}</b><button data-a="mgBig">크게 보기 ›</button></div>${mgGrid()}</div>
+    </div>
+    <div class="mgbot"><button class="prim" data-a="mgStart"${ready?'':' disabled'}>정한 내용으로 내 역할 시작 ›</button></div></div>`;
+}
+function mgEditView(){
+  const m=S.mgr, who=m.edit, d=MG_DEF[who], rows=m.draft, hours=MG_HOURS.slice(0,rows.length);
+  const other = who==='me' && m.peter!=='none' ? m.peterRows : null;   // 먼저 정한 Peter 의 배정을 같이 보여 줌
+  const cell = (i,r) => { const sel = rows[i]===r, oth = other && other[i]===r;
+    return r==='휴게' ? `<button class="b brk${sel?' on':''}${oth&&!sel?' oth':''}" data-a="mgPick" data-v="${i}|휴게">${sel?`휴게 ${hours[i]}`:oth?'휴게<small>Peter</small>':'+ 휴게'}</button>`
+                      : `<button class="b${sel?' on':''}${oth&&!sel?' oth':''}" data-a="mgPick" data-v="${i}|${r}">${r}${sel?' ✓':''}${oth&&!sel?'<small>Peter</small>':''}</button>`; };
+  return `${mgHead()}<div class="mg"><div class="mgh" style="margin-top:8px"><b>${who==='me'?'내 시간표 정하기':'Peter에게 제안'}</b><button data-a="mgBack">‹ 배정 화면</button></div>
+    <div class="mgscroll"><div class="mgcard"><div class="mgch"><b>${who==='me'?'Simon (나)':'Peter의 시간표'}</b><span class="mgleg" style="margin:0"><span><i style="background:var(--ink)"></i>${who==='me'?'내 근무':'근무'}</span><span><i style="background:var(--purple)"></i>휴게</span>${other?`<span><i style="background:#2f7f86"></i>Peter</span>`:''}</span></div>
+      <div class="edge">${d.start} 출근</div>
+      <div class="mge">${hours.map((h,i)=>`<span class="h">${h}</span>${['CS','POS','BAR','휴게'].map(r=>cell(i,r)).join('')}`).join('')}</div>
+      <div class="edge">${d.end} 퇴근</div></div></div>
+    <div class="mgbot"><button class="prim" data-a="mgSave">${who==='me'?'이대로 정하기':(m.view==='with'?'이대로 정하기':'Peter에게 보내기')}</button></div></div>`;
+}
+function mgGoView(){
+  const m=S.mgr, rows=m.me||MG_DEF.me.rows, b=mgBrk(rows);
+  return `${mgHead()}<div class="mg"><div class="mgh" style="margin-top:8px;flex-direction:column;align-items:flex-start;gap:2px"><button data-a="mgBack" style="padding:0">‹ 배정 화면</button><b>이제 ${RC.role}로 일해요</b></div>
+    <div class="mgscroll"><div class="mgcard now"><span class="mgrole">${RC.role}</span><small style="text-align:center;color:var(--sub)">근무 역할 · ${hhmm(RC.startMin).padStart(5,'0')} – ${mgNext(hhmm(RC.startMin).padStart(5,'0'))}</small>
+        <div class="mg3"><span><small>출근</small><b>${MG_DEF.me.start}</b></span><span><small>휴게</small><b>${b?`${b} – ${mgNext(b)}`:'없음'}</b></span><span><small>퇴근</small><b>${MG_DEF.me.end}</b></span></div></div>
+      <div class="mgcard"><div class="mgch"><b>매니저 화면으로 돌아올 때</b></div>
+        <div class="mgrow"><span><b style="font-size:calc(15px * var(--fsz,1))">08:00 Lila 출근</b></span><small>임의 배정 수정하면 돌아오기</small></div>
+        <div class="mgrow"><span><b style="font-size:calc(15px * var(--fsz,1))">${b||'10:00'} 휴게 전</b></span><small>Jerry에게 인수인계하기</small></div></div></div>
+    <div class="mgbot"><button class="prim" data-a="mgGo">${RC.role} 화면으로 가기 ›</button></div></div>`;
+}
+// Peter 에게 시간표 보내기: 연결된 휴대폰이 있으면 진짜로 보내고, 없으면 잠시 뒤 '좋아요'가 온 것처럼
+function mgSendPeter(direct){
+  const m=S.mgr, rows=m.peterRows.map((r,i)=> r==='휴게' ? {h:MG_HOURS[i],r:'휴게',b:1} : {h:MG_HOURS[i],r});
+  m.peter = direct ? 'ok' : 'sent';
+  if(Peer.on){ Peer.send({t:'sched',rows}); log(NM('→ 휴대폰의 Peter에게 시간표 보냄')); }
+  else if(!direct){ log(NM('Peter에게 시간표 제안 (휴대폰 연결 없음 · 잠시 뒤 대답)')); later(2600,()=>{ if(S.mgr.peter==='sent'){ S.mgr.peter='ok'; if(/^m(Home|Edit|Go)$/.test(S.screen)) render(); } }); }
+  if(/^m(Home|Edit|Go)$/.test(S.screen)) render();
+}
+function mgPeerRes(m){   // 휴대폰의 대답
+  const g=S.mgr;
+  if(m.r==='no'){ if(g.peter==='sent') later(1800,()=>{ if(S.mgr.peter==='sent'){ S.mgr.peter='ok'; if(/^m(Home|Edit|Go)$/.test(S.screen)) render(); } }); }   // 휴대폰이 아직 그 화면이 아니면 혼자 체험으로 보고 대답을 대신 처리
+  else { g.peter='ok'; if(m.r==='chg' && Array.isArray(m.full)) g.peterRows=m.full.map(x=>x.b?'휴게':x.r); }
+  if(/^m(Home|Edit|Go)$/.test(S.screen)) render();
+}
+function mgAct(a,v){
+  const m=S.mgr;
+  switch(a){
+    case 'mgView': m.view=v; break;
+    case 'mgMember': toast('멤버 관리는 이 시연에 없어요'); return true;
+    case 'mgBig': toast('가로로 크게 보기는 이 시연에 없어요'); return true;
+    case 'mgEdit': if(v==='peter' && m.peter!=='none') return true; m.edit=v; m.draft=(v==='me' ? (m.me||MG_DEF.me.rows) : m.peterRows).slice(); S.screen='mEdit'; break;
+    case 'mgPick': { const [i,r]=v.split('|'); const k=+i; if(r==='휴게'){ m.draft=m.draft.map((x,j)=> x==='휴게'&&j!==k ? MG_DEF[m.edit].rows[j]==='휴게' ? 'CS' : MG_DEF[m.edit].rows[j] : x); } m.draft[k]=r; break; }   // 휴게는 한 번만
+    case 'mgSave': if(m.edit==='me'){ m.me=m.draft.slice(); S.screen='mHome'; log('매니저: 내 시간표 정함'); } else { m.peterRows=m.draft.slice(); S.screen='mHome'; m.edit=null; mgSendPeter(m.view==='with'); return true; } m.edit=null; break;
+    case 'mgBack': S.screen='mHome'; m.edit=null; break;
+    case 'mgRand': m.away[v]=!m.away[v]; if(m.away[v]) log(`매니저: ${v} 임의 배정`); break;
+    case 'mgStart': if(!(m.me && m.peter==='ok')) return true; S.screen='mGo'; break;
+    case 'mgGo': S.prop.rows = m.me.map((r,i)=> r==='휴게' ? {h:MG_HOURS[i],r:'휴게',b:1} : {h:MG_HOURS[i],r}); S.prop.orig=S.prop.rows.map(x=>({...x})); S.propDone=true; act('toBar'); return true;
+    default: return false;
+  }
+  render(); return true;
 }
 function rolePickView(){
   return `<div class="full rolepick">
@@ -1417,7 +1577,7 @@ function csCycleRows(){
 }
 function csHomeView(){
   const r=S.prop.rows; const nowH=Math.floor(S.min/60); let cur=r[0]; r.forEach(x=>{ if(+x.h.slice(0,2)<=nowH) cur=x; });
-  const nxt=r.find(x=>+x.h.slice(0,2)>+cur.h.slice(0,2)); const endH=nxt?nxt.h:'11:00';
+  const nxt=r.find(x=>+x.h.slice(0,2)>+cur.h.slice(0,2)); const endH=nxt?nxt.h:END();
   return `<div class="line"><span class="pill">책임자 Simon</span><span class="pill">CS · ${cur.h} – ${endH}</span></div>
     <span class="lab">들어온 요청${S.cs.reqs.length?` · ${S.cs.reqs.length}`:''}</span>${csReqRows()}
     <span class="lab">CS 사이클 · ${S.cs.round}바퀴째 · ${csCount().k} / ${csCount().n}</span>${csCycleRows()}
@@ -1827,6 +1987,7 @@ function reply(from, text, positive=true, onDone){
 }
 function act(a, d={}){
   const v=d.v, i=d.i!=null?+d.i:null;
+  if(a.startsWith('mg') && mgAct(a,v)) return;
   switch(a){
   case 'fill': $('#lid').value='2020212028'; $('#lpw').value='seehear'; $('#lgo').disabled=false; break;
   case 'login': S.screen = (IS_PAD() || Peer.on) ? 'clipLink' : 'teamLink'; S.set.teamDraft=null; log('Peter 로그인'); if(!IS_PAD() && Peer.on) log('아이패드 앱과 이미 연결돼 있어 연결 화면을 건너뜀'); render(); break;   // 휴대폰은 아이패드와 연결하는 화면부터
@@ -1834,8 +1995,10 @@ function act(a, d={}){
   case 'clipBle': Clip.ble(); break;
   case 'clipUsb': Clip.usb(); break;
   case 'clipNext': S.screen='rolepick'; log(Clip.on?'클립 연결하고 시작':'클립 없이 시작 (시연)'); render(); break;
-  case 'pickMgr': toast('이 시연은 파트너 · BAR 화면만 있어요'); break;
-  case 'pickPartner': S.screen='pHome'; S.min=RC.startMin;
+  case 'pickMgr': if(!IS_CS){ toast('이 휴대폰은 파트너 Peter의 화면이에요 · 파트너를 골라 주세요'); break; }
+    S.screen='mHome'; S.min=6*60; S.mgr=mgFresh(); log('매니저로 시작 · 오늘 근무 정하기'); render(); break;
+  case 'pickPartner': if(IS_CS){ toast(NM('아이패드는 매니저 Simon의 화면이에요 · 매니저를 골라 주세요')); break; }
+    S.screen='pHome'; S.min=RC.startMin;
     if(!IS_CS && Peer.on){ render(); Peer.send({t:'waitSched'}); log('아이패드(매니저)의 시간표를 기다리는 중'); break; }   // 연결돼 있으면 아이패드의 '시간표 보내기'를 기다림
     if(IS_CS){ S.propDone=true; S.propIn=false; setMsg('휴게 끝 · 10:00부터 CS','ok',null,6000); log('CS 앱: 아침에 정한 시간표 그대로 · 10:00 CS 시작 장면'); render(); break; } render();
     later(2400,()=>{ if(S.screen==='pHome'&&!S.propSent&&!S.propIn){ S.propIn=true; sig('prop','green','fast','L','pers'); setMsg('Simon 매니저가 시간표를 제안했어요','say'); log('Simon 매니저가 시간표를 제안함'); render(); } }); break;
@@ -1845,7 +2008,7 @@ function act(a, d={}){
   case 'propOpen': S.prop.open = S.prop.open===i ? null : i; unsig('prop'); render(); break;
   case 'propCancel': S.prop.edit=false; S.prop.open=null; S.prop.rows=JSON.parse(JSON.stringify(S.prop.orig)); if(S.screen==='proposal') S.screen='pHome'; render(); break;
   case 'propSet': { const r=S.prop.rows[i]; if(v==='휴게'){ S.prop.rows.forEach((x,k)=>{ if(x.b){x.b=0; x.r=(S.prop.orig[k]&&!S.prop.orig[k].b)?S.prop.orig[k].r:'BAR';} }); r.b=1; r.r='휴게'; } else { r.b=0; r.r=v; } if(!S.prop.edit) S.prop.open=null; render(); break; }
-  case 'propSend': if(Peer.on) Peer.send({t:'schedRes',r:'chg',rows:S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+(r.b?'휴게':r.r)).join(', ')}); S.prop.edit=false; S.prop.open=null; S.propSent=true; log('바꾼 줄: '+S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+r.r).join(', ')); S.screen='pHome'; setMsg('바꾼 시간표 보냄 · Simon 대답 기다리는 중','dark'); S.msg.sticky=true; log('바꾼 시간표를 Simon에게 보냄'); render();
+  case 'propSend': if(Peer.on) Peer.send({t:'schedRes',r:'chg',full:S.prop.rows.map(x=>({...x})),rows:S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+(r.b?'휴게':r.r)).join(', ')}); S.prop.edit=false; S.prop.open=null; S.propSent=true; log('바꾼 줄: '+S.prop.rows.filter((r,k)=>r.r!==S.prop.orig[k].r||!!r.b!==!!S.prop.orig[k].b).map(r=>r.h+' '+r.r).join(', ')); S.screen='pHome'; setMsg('바꾼 시간표 보냄 · Simon 대답 기다리는 중','dark'); S.msg.sticky=true; log('바꾼 시간표를 Simon에게 보냄'); render();
     later(2800,()=>{ sig('rep-Simon','blue','slow','L','reply'); later(5000,()=>unsig('rep-Simon')); setMsg('Simon이 좋다고 했어요 · 시간표 확정','ok',null,6000); S.propDone=true; S.propSent=false; S.propIn=false; log('Simon이 시간표를 받아들임'); render(); }); break;
   case 'propOk': if(Peer.on) Peer.send({t:'schedRes',r:'ok'}); unsig('prop'); S.propDone=true; S.propIn=false; setMsg('오늘 시간표가 정해졌어요','ok',null,5000); log('시간표 좋아요'); render(); break;
   case 'toBar': S.screen='main'; S.min=RC.sceneMin; S.tab=null; S.view='home'; setMsg(null); S.dots={group:false,pers:false,alarm:false}; log(`${RC.role} 화면 시작 · ${hhmm(S.min)} 장면으로 이동`); render(); break;
@@ -2180,11 +2343,11 @@ const Sched = (()=>{
     b.disabled = !ready; b.classList.toggle('blink', ready);
     if(n) n.textContent = !Peer.on ? '휴대폰과 연결되면 쓸 수 있어요.' : ready ? '휴대폰이 ‘역할을 정하는 중’ 화면에서 기다리고 있어요. 눌러서 시간표를 보내 주세요.' : '휴대폰이 ‘역할을 정하는 중’ 화면에 오면 단추가 깜박여요.';
   }
-  function peerWait(v){ if(v!==wait){ wait=v; paint(); } }
+  function peerWait(v){ if(v!==wait){ wait=v; paint(); if(typeof S!=='undefined' && S && S.screen==='mHome') render(); } }
   document.addEventListener('click', e=>{ const b=e.target.closest('#schedBtn'); if(!b || b.disabled) return;
-    Peer.send({t:'sched'}); log('→ 휴대폰으로 시간표 보냄 (매니저 Simon 역할)'); wait=false; paint(); });
+    wait=false; mgSendPeter(false); paint(); });
   setInterval(paint, 2000);
-  return {paint, peerWait};
+  return {paint, peerWait, get waiting(){ return wait && Peer.on; }};
 })();
 // ---------- 처음부터 체험 시작하기 (다음 관람객) ----------
 (()=>{ let armed=null;
@@ -2323,15 +2486,15 @@ const Intro = (()=>{
   const P0 = {a:0, k:'SeeHear', h:'소리 대신 빛으로 부르는 카페', b:`<p>청인과 농인이 함께 일하는 카페를 위한 소통 시스템이에요.</p><p>동료가 부르면 <b>모자 챙 안쪽의 클립</b>에 불이 켜지고, 자세한 내용은 <b>앱 화면</b>에 남아요.</p><p class="ivcta">아이패드와 앞의 휴대폰, 클립으로 직접 체험해보세요.</p>
     <div class="ivpick"><button data-in="solo"><b>혼자 체험하기</b><small>아이패드 하나로</small></button><button data-in="duo"><b>둘이서 체험하기</b><small>아이패드와 아이폰으로</small></button></div>`};
   const SOLO = {a:1, k:'혼자 체험하기 · 아이패드', h:'아이패드 하나로 체험해요', b:`<ol>
-    ${li(1,`<b>왼쪽 화면</b>은 ${me} 자리에서 일하는 <b>${padWho}</b>의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’으로 시작해요.`)}
+    ${li(1,`<b>왼쪽 화면</b>은 <b>${padWho}</b>의 앱이에요. ‘시연용 사번 넣기’ → ‘로그인’ → <b>‘매니저’</b>를 고르고, 오늘 시간표를 정한 뒤 ${me} 화면으로 들어가요.`)}
     ${li(2,`<b>오른쪽 ‘상황 만들기’</b>의 단추를 눌러 보세요. 손님 호출, 동료 ${phMe}의 메시지와 요청, 위험 알림이 일어나요.`)}
     ${li(3,`그때마다 <b>모자 그림과 실제 클립</b>에 어떤 빛이 켜지는지 보세요.`)}
     ${li(4,`왼쪽 화면에서 요청에 <b>‘가져갈게요’</b>로 답하고, ${me} 사이클의 할 일을 눌러 체크해 보세요.`)}</ol><p class="ivnote">혼자일 때는 아이폰을 쓰지 않아도 돼요.</p>`};
   const DUO1 = {a:1, k:'둘이서 체험하기 · 아이패드', h:`한 분은 아이패드에서 ${padWho}`, b:`<ol>
-    ${li(1,`왼쪽 화면에서 ‘시연용 사번 넣기’ → ‘로그인’으로 <b>${me} 화면</b>까지 들어가요.`)}
-    ${li(2,`아이폰이 ‘역할을 정하는 중’에서 기다리면 오른쪽 <b>‘시간표 보내기’</b>가 깜박여요. 눌러서 시간표를 보내 주세요.`)}
-    ${li(3,`아이폰에서 요청이 오면 왼쪽 화면에서 <b>‘가져갈게요’</b>로 답해요.`)}
-    ${li(4,`‘상황 만들기’ 맨 위를 <b>‘휴대폰 (${other})’</b>로 바꾸면 아이폰 쪽에 주문·손님 호출 같은 상황을 보낼 수 있어요.`)}</ol>`};
+    ${li(1,`왼쪽 화면에서 ‘시연용 사번 넣기’ → ‘로그인’ → <b>‘매니저’</b>를 골라요.`)}
+    ${li(2,`아이폰이 ‘역할을 정하는 중’에서 기다리면 ${phMe} 옆 <b>‘제안 보내기’</b>가 깜박여요. 눌러서 시간표를 보내 주세요.`)}
+    ${li(3,`<b>내 시간표</b>도 정하고 ‘정한 내용으로 내 역할 시작’을 눌러 ${me} 화면으로 들어가요.`)}
+    ${li(4,`아이폰에서 요청이 오면 <b>‘가져갈게요’</b>로 답해요. ‘상황 만들기’ 맨 위를 <b>‘휴대폰 (${other})’</b>로 바꾸면 아이폰에 주문 같은 상황도 보낼 수 있어요.`)}</ol>`};
   const DUO2 = {a:2, k:'둘이서 체험하기 · 아이폰', h:`다른 한 분은 아이폰에서 ${phWho}`, b:`<ol>
     ${li(1,`‘로그인’ → ‘파트너’를 고르고, 아이패드가 보낸 <b>시간표</b>를 받아 ${other} 화면으로 들어가요.`)}
     ${li(2,`<b>재료 요청 · 지원 요청</b>을 보내면 아이패드 화면과 ${me} 클립에 도착해요.`)}
