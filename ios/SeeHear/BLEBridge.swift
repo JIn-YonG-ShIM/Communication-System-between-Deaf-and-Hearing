@@ -4,6 +4,7 @@ import CoreBluetooth
 import WebKit
 import Speech
 import AVFoundation
+import UIKit
 
 /// 웹(webble.js) ↔ iOS 사이의 다리.
 /// 웹이 window.webkit.messageHandlers.ble.postMessage({...}) 로 부르면 여기서 CoreBluetooth 를 움직이고,
@@ -37,6 +38,23 @@ final class BLEBridge: NSObject, ObservableObject, WKScriptMessageHandler {
     override init() {
         super.init()
         central = CBCentralManager(delegate: self, queue: .main)
+        // 앱을 닫거나(홈으로 나가기·앱 끄기) 화면이 잠기면 클립을 놓아줘요.
+        // 붙잡은 채로 남아 있으면 클립이 '나 여기 있어요' 신호를 멈춰서, 다시 켰을 때 목록에 안 보여요.
+        let nc = NotificationCenter.default
+        nc.addObserver(self, selector: #selector(appClosing), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        nc.addObserver(self, selector: #selector(appClosing), name: UIApplication.willTerminateNotification, object: nil)
+        UIApplication.shared.isIdleTimerDisabled = true   // 전시 중 화면이 저절로 잠기지 않게
+    }
+    @objc private func appClosing() { releaseClip() }
+
+    /// 붙잡고 있는 클립을 전부 놓아요 (연결 끊기). 끊기면 클립은 빛을 끄고 다시 찾을 수 있는 상태가 돼요.
+    func releaseClip() {
+        if let p = connected { central.cancelPeripheralConnection(p) }
+        for p in peripherals.values where p.state == .connected || p.state == .connecting { central.cancelPeripheralConnection(p) }
+        if !wantedServices.isEmpty {
+            for p in central.retrieveConnectedPeripherals(withServices: wantedServices) { central.cancelPeripheralConnection(p) }
+        }
+        connected = nil; services = [:]; chars = [:]; pending = [:]
     }
 
     // ================= 웹 → iOS =================
@@ -96,6 +114,7 @@ final class BLEBridge: NSObject, ObservableObject, WKScriptMessageHandler {
         found = []
         showPicker = true
         if central.state == .poweredOn {
+            releaseClip()   // 예전 연결이 남아 있으면 먼저 놓아야 클립이 목록에 다시 나타나요
             central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
     }
@@ -182,6 +201,7 @@ final class BLEBridge: NSObject, ObservableObject, WKScriptMessageHandler {
 extension BLEBridge: CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ c: CBCentralManager) {
         if c.state == .poweredOn, showPicker {
+            releaseClip()
             c.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
         if c.state != .poweredOn, let rid = pickRequestId { reject(rid, "Bluetooth is off"); showPicker = false; pickRequestId = nil }

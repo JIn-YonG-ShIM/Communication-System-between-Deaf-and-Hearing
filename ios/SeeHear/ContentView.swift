@@ -71,9 +71,20 @@ struct WebView: UIViewRepresentable {
         wv.isOpaque = false
         wv.backgroundColor = .clear
         wv.allowsBackForwardNavigationGestures = false
+        wv.navigationDelegate = context.coordinator
         bridge.webView = wv
         wv.load(URLRequest(url: AppConfig.url, cachePolicy: .reloadRevalidatingCacheData))
         return wv
     }
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(bridge: bridge) }
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        let bridge: BLEBridge
+        init(bridge: BLEBridge) { self.bridge = bridge }
+        // 화면(웹 페이지)이 새로 시작되면 예전 클립 연결을 놓아요. 화면은 '연결 안 됨'인데 속으로는 붙잡고 있는 일이 없게.
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) { bridge.releaseClip() }
+        // iOS 가 뒤에 있던 화면을 메모리에서 내렸을 때: 클립을 놓고 화면을 다시 불러와요.
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { bridge.releaseClip(); webView.reload() }
+    }
 }
