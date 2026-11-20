@@ -859,6 +859,9 @@ const DEF_ING = [
 const DEF_SUP = ['음료 만들기','포장 · 워밍','픽업대 봐주기','컵 · 얼음 채우기'];
 const SCHED = [{h:'06:00',r:'BAR'},{h:'07:00',r:'POS'},{h:'08:00',r:'BAR'},{h:'09:00',r:'휴게',b:1},{h:'10:00',r:'CS'}];
 /* 빌드 종류: BAR 앱 / CS 앱 (같은 소스, build.py 가 CS 을 바꿔 넣음). Peter 의 시간표는 같고, 장면 시각만 다름 */
+// 디자인 편집기(seehear-editor.html) 안에서 열렸을 때: 전용 앱처럼 보이게
+const EDIT_MODE = /[?&]edit=1/.test(location.search);
+if(EDIT_MODE) window.__nativeApp = true;
 const APP_ROLE = 'CS';
 const IS_CS = APP_ROLE === 'CS';
 // CS 앱(아이패드)은 매니저 Simon, BAR 앱(아이폰)은 농인 파트너 Peter.
@@ -1306,6 +1309,7 @@ function render(){
   P.classList.toggle('darkcard', S.screen==='main' && S.tab==='card' && ['green','navy','black'].includes(S.card.color));
   if(S.screen==='main' && S.tab==='card') P.dataset.cc=S.card.color; else delete P.dataset.cc;
   const sc = S.screen;
+  document.body.dataset.scr = sc + (sc==='main' ? '-'+(S.tab||'home') : '') + (S.set.page ? '-'+S.set.page : '');   // 디자인 덮어쓰기가 '이 화면에서만' 을 가릴 때 씀
   const key0=[sc,S.tab,S.view,S.set.page,S.chatWith,S.card.menu&&'cm:'+S.card.menu,S.sheet&&S.sheet.k,S.land,S.onBreak,S.call&&S.call.st,S.propIn,S.prop.edit].join('|');
   const bodySig = JSON.stringify([S.orders,S.done,S.showDone,S.ing,S.sup,S.req,S.danger,S.ho,S.alarms,S.machinesOn,S.dots,S.group.length,S.reactFor,S.compose,S.emoSel,S.chats[S.chatWith||'Simon'].length,S.card,S.set,S.prop,S.propSent,S.propIn,S.propDone,S.call&&[S.call.more,S.call.stt,S.call.tts],S.theme,S.fsz,(S.tab==='alarm'||S.set.page==='clip'||S.screen==='clipLink')?S.clipWord:'',S.clipErr,Clip.on,S.cs,Peer.code,Peer.state,S.mgr,schedWait()]);
   if(key0===S.lastKey && bodySig===S.lastBody && P.querySelector('.msg')){ msgOnly(); return; }
@@ -2628,4 +2632,75 @@ $('#mbtog').addEventListener('click',()=>{ document.body.classList.toggle('mbhid
 function reset(){ clearTimers(); if(S) S.signals.forEach(x=>x.timer&&clearTimeout(x.timer)); clearInterval(S&&S.testIv); S=fresh(); $('#log').innerHTML=''; paintClip(); render(); }
 reset();
 (function(){ const h=location.hash.replace('#',''); let m=['phone','remote','both'].includes(h)?h:null; if(!m){ try{ m=localStorage.getItem('seehear-mode'); }catch(e){} } if(IS_CS && !['phone','remote','both'].includes(h)) m='both'; if(!m) m = innerWidth<700 ? 'phone' : 'both'; setMode(m); })();
+
+// ================= 디자인 덮어쓰기 =================
+// 편집기(seehear-editor.html)에서 바꾼 내용(design-bar.json / design-cs.json)을 앱 위에 덧씌워요.
+//   css : 요소의 색·크기·위치·숨김   text : 글자 바꾸기   add : 새로 넣은 요소
+const Design = (()=>{
+  const ROLE = APP_ROLE.toLowerCase(), KEY='sh-design-'+ROLE, DRAFT='sh-design-draft-'+ROLE;
+  const EMPTY = () => ({v:1, css:[], text:[], add:[]});
+  let D = EMPTY(), mo = null, queued = false;
+  const st = document.createElement('style'); st.id='dzStyle'; document.head.appendChild(st);
+  const base = document.createElement('style'); base.textContent = 'dz-el{display:block;box-sizing:border-box}dz-el[data-k="btn"]{cursor:pointer;text-align:center;user-select:none;-webkit-user-select:none}dz-el[data-k="img"] img{display:block;width:100%;height:auto;border-radius:inherit}'; document.head.appendChild(base);
+  const sc = s => s ? `body[data-scr="${s}"] ` : '';
+  const here = s => !s || document.body.dataset.scr === s;
+  function paintCss(){ st.textContent = D.css.map(r=>`${sc(r.scope)}${r.sel}{${Object.entries(r.p).map(([k,v])=>`${k}:${v} !important`).join(';')}}`).join('\n'); }
+  function apply(){
+    queued = false; if(mo) mo.disconnect();
+    try{
+      // 글자
+      const map = {}; D.text.forEach(t=>{ if(here(t.scope)) map[t.from]=t.to; });
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {acceptNode:n=>{ const p=n.parentNode; return !p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName) || (p.closest && p.closest('dz-el,[data-dzui]')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }});
+      let n; while((n = w.nextNode())){
+        const v = n.nodeValue, k = v.trim();
+        if(n._dzo !== undefined){
+          if(n._dzn !== v) delete n._dzo;                                   // 앱이 글자를 새로 썼음 → 처음부터 다시 봄
+          else if(map[n._dzo] === undefined){ n.nodeValue = n._dzv; delete n._dzo; continue; }   // 덮어쓰기가 지워짐 → 원래 글자로
+          else { const nv = n._dzv.replace(n._dzo, map[n._dzo]); if(nv !== v){ n.nodeValue = nv; n._dzn = nv; } continue; }
+        }
+        if(k && map[k] !== undefined){ n._dzo = k; n._dzv = v; n.nodeValue = v.replace(k, map[k]); n._dzn = n.nodeValue; }
+      }
+      // 새로 넣은 요소
+      const ids = new Set(D.add.map(a=>a.id));
+      document.querySelectorAll('dz-el').forEach(e=>{ if(!ids.has(e.dataset.dz)) e.remove(); });
+      D.add.forEach(a=>{
+        let e = document.querySelector(`dz-el[data-dz="${a.id}"]`);
+        if(!here(a.scope)){ if(e) e.remove(); return; }
+        if(!e){
+          let anchor = null; try{ anchor = document.querySelector(a.anchor); }catch(x){}
+          if(!anchor) return;
+          e = document.createElement('dz-el'); e.dataset.dz = a.id;
+          ({before:()=>anchor.before(e), after:()=>anchor.after(e), start:()=>anchor.prepend(e), end:()=>anchor.append(e)}[a.where] || (()=>anchor.after(e)))();
+        }
+        const sig = JSON.stringify([a.kind,a.text,a.src,a.p,a.attrs,a.toast]);
+        if(e._sig !== sig){
+          e._sig = sig; e.dataset.k = a.kind;
+          if(a.kind==='img'){ e.innerHTML=''; const i=document.createElement('img'); i.src=a.src||''; i.alt=''; e.appendChild(i); }
+          else e.textContent = a.kind==='line' || a.kind==='box' ? '' : (a.text||'');
+          e.setAttribute('style', Object.entries(a.p||{}).map(([k,v])=>`${k}:${v}`).join(';'));
+          [...e.attributes].forEach(t=>{ if(/^data-(a|v|i|d|c|dzt)$/.test(t.name)) e.removeAttribute(t.name); });
+          Object.entries(a.attrs||{}).forEach(([k,v])=>e.setAttribute(k,v));
+          if(a.toast) e.dataset.dzt = a.toast;
+          if(a.kind==='btn') e.setAttribute('role','button');
+        }
+      });
+    }catch(x){}
+    if(mo && (D.text.length || D.add.length)) mo.observe(document.body, {childList:true, subtree:true, characterData:true});
+  }
+  function set(d){ D = Object.assign(EMPTY(), d||{}); paintCss(); apply(); }
+  mo = new MutationObserver(()=>{ if(!queued){ queued = true; Promise.resolve().then(apply); } });
+  document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('dz-el[data-dzt]'); if(b) toast(b.dataset.dzt); });
+  async function load(){
+    try{ const c = localStorage.getItem(KEY); if(c) set(JSON.parse(c)); }catch(x){}
+    if(EDIT_MODE){ try{ const d = localStorage.getItem(DRAFT); if(d){ set(JSON.parse(d)); return; } }catch(x){} }
+    try{
+      const r = await fetch('design-'+ROLE+'.json?v='+Date.now(), {cache:'no-store'});
+      if(r.ok){ const j = await r.json(); set(j); try{ localStorage.setItem(KEY, JSON.stringify(j)); }catch(x){} }
+      else if(r.status===404){ try{ localStorage.removeItem(KEY); }catch(x){} set(null); }
+    }catch(x){}
+  }
+  return {set, get:()=>D, load, apply, ROLE, DRAFT};
+})();
+window.Design = Design;
+Design.load();
 </script>
